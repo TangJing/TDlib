@@ -4,6 +4,7 @@ from multiprocessing import Process,Lock
 class Q:
     def __init__(self, maxSize=100):
         self._list=queue.Queue(maxSize)
+        
         self._lock=Lock()
 
     def push(self,value):
@@ -17,3 +18,7 @@ class Q:
         if not self.ioList.empty():
             return self._list.get()
         self._lock.release()
+
+    def getQSize(self):
+        return self._list.qsize()
+        

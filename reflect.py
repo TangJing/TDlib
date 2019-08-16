@@ -4,10 +4,14 @@
 class reflect:
     def __init__(self,namespace):
         self.__userNamespace = namespace
-        self.__namespace = None #命名空间
-        self.__instance = None  #实例
-        self.__importt()
+        self.__namespace = None #namespace or import path
+        self.__instance = None  #instance class
+        self.__importt()        #run import method
 
+    '''
+        Import package
+        if import fail will return None
+    '''
     def __importt(self):
         try:
             if self.__userNamespace:
@@ -17,6 +21,10 @@ class reflect:
         except Exception as e:
             return None
 
+    '''
+        Instance class
+        If instance fail will return None
+    '''
     def Instance(self,classname,*args):
         try:
             if classname:
@@ -30,6 +38,10 @@ class reflect:
         except Exception as e:
             return None
 
+    '''
+        Call method
+        if call fail will return None
+    '''
     def Call(self,methodname,*args,**kw):
         try:
             if methodname:
@@ -46,4 +58,9 @@ class reflect:
         except Exception as e:
             return None
 
+    '''
+        Print example document
+    '''
+    def help(self):
+        print("\r\nExample\r\n\tsetp1:import TDlib.reflect.reflect\r\n\tsetp2:reflect(namespace).Instance(classname).Call(methodname,*args or **kw)")
         

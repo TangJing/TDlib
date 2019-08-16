@@ -13,4 +13,7 @@ def getGlobalVariable(key,defaultValue=None):
     except Exception as e:
         return defaultValue
 
+'''
+    define the system's event cache,if you have't set this param you can call deleteGlobalVariable to delete it;
+'''
 setGlobalVariable("EventList",{})

@@ -14,9 +14,9 @@ class Event:
 
     def _keyconvert(self,key):
         if isinstance(key,str):
-            return key.lower()
+            return (str(self.__hash__())+key).lower()
         elif isinstance(key,Enum):
-            return key.value.lower()
+            return (str(self.__hash__())+key.value).lower()
         else:
             return None
     '''
@@ -30,6 +30,9 @@ class Event:
     def _getEventListObject(self,key):
         return bin.globalvar.getGlobalVariable("EventList")[self._keyconvert(key)]
 
+    def getEventList(self):
+        return bin.globalvar.getGlobalVariable("EventList")
+
     '''
         Register an event
         Parameter
@@ -42,7 +45,7 @@ class Event:
     '''
     def registerEvent(self,key,func,sync=True):
         if self._state:
-            if self._checkKeyNotInEventList(key):
+            if self._checkKeyNotInEventList(self._keyconvert(key)):
                 bin.globalvar.getGlobalVariable("EventList")[self._keyconvert(key)]={"func":func,"sync":sync}
 
 
@@ -51,7 +54,7 @@ class Event:
     '''
     def delEvent(self,key):
         if self._state:
-            if not self._checkKeyNotInEventList(key):
+            if not self._checkKeyNotInEventList(self._keyconvert(key)):
                 del bin.globalvar.getGlobalVariable("EventList")[self._keyconvert(key)]
 
     '''
@@ -63,9 +66,9 @@ class Event:
                 if self._state:
                     if self._keyconvert(key) in bin.globalvar.getGlobalVariable("EventList"):
                         if self._getEventListObject(key)["sync"]:
-                            print(self._getEventListObject(key)["func"])
                             self._getEventListObject(key)["func"](*args,**kw)
                         else:
+                            #todo asynchronous call back
                             pass#threading.Thread(target=self._getEventListObject(key)["func"],args=[*args,**kw,]).start()
         except Exception as e:
             raise e

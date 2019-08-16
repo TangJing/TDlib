@@ -42,9 +42,6 @@ class Client(eSocket,threading.Thread):
                     self.__runing.clear()
                     break
                 self.on(SOCKET_EVENT.onRecv,buff)
-                print("%s-runingFlag:%s\r\n"%(self.getName(),self.__runing.is_set()))
-                self.__runing.clear()
-            print("%s-5、退出\r\n"%self.getName())
         except Exception as e:
             self.on(SOCKET_EVENT.onError,e)
         finally:
@@ -55,6 +52,9 @@ class Client(eSocket,threading.Thread):
             self.__runing.clear()
 
     def closeClient(self):
-        self.__state=False
-        self.setRuning()
-        self.close()
+        try:
+            self.__state=False
+            self.setRuning()
+            self.close()
+        except Exception as e:
+            self.on(SOCKET_EVENT.onError,e)

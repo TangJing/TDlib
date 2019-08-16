@@ -59,7 +59,6 @@ class Server(eSocket,threading.Thread):
                 '''
                 self.on(SOCKET_EVENT.onRecv.value,buff,connection)
         except Exception as e:
-            print("error%s"%connection)
             self.on(SOCKET_EVENT.onError.value,e)
         finally:
             # print("关闭 %s" % connection)
