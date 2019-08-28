@@ -2,14 +2,22 @@ import urllib.request
 import io
 import os
 import json
+from bin.globalvar import *
 
 class apiCore():
+
+    '''
+        Initializing and load api route
+    '''
     def __init__(self,apiName,version="v1",apiRouteFileName="/apiRoutePath"):
+        self._apiName=apiName+"_"+version
         self._path=os.path.dirname(__file__)+"\\"+apiName+"\\"+version+"\\"
         if not os.path.exists(self._path):
             os.makedirs(self._path)
         self._routePath=os.path.join(self._path,apiRouteFileName+".arp")
-        self._apiRoute = dict()
+        if not hasKey(apiName+version):
+            #create global route tables
+            setGlobalVariable(self._apiName,dict())
         if self._routePath:
             if os.path.exists(self._routePath):
                 #read apiRouteFile and init apiroute
@@ -26,31 +34,33 @@ class apiCore():
                     f.close()
 
     '''
-        add a new api,and save route
+        Add a new api,and save route to file
     '''
     def addapi(self,key,apiUri,method="GET"):
-        if key.lower() not in self._apiRoute:
-            self._apiRoute[key.lower()]={"uri":apiUri,"method":method.lower()}
-            #save to apiRouteFile
+        #if key.lower() not in self._apiRoute:
+        if key.lower() not in getGlobalVariable(self._apiName):
+            getGlobalVariable(self._apiName)[key.lower()]={"uri":apiUri,"method":method.lower()}
             return True
         else:
             return False
 
     '''
-        delete a api
+        Delete a api
     '''
     def delapi(self,key):
-        if key.lower() in self._apiRoute:
-            del self._apiRoute[key.lower()]
+        if key.lower() in getGlobalVariable(self._apiName):
+            del getGlobalVariable(self._apiName)[key.lower()]
             return True
         else:
             return False
-
+    '''
+        Save api route to file
+    '''
     def save(self):
         #create file write buffer
         wBuffer=""
-        for item in self._apiRoute:
-            wBuffer+=json.dumps({"key":item,"value":self._apiRoute[item]})+"\r\n"
+        for item in getGlobalVariable(self._apiName):
+            wBuffer+=json.dumps({"key":item,"value":getGlobalVariable(self._apiName)[item]})+"\r\n"
         #save buffer to file
         if not wBuffer:
             wBuffer="\r\n"
@@ -60,13 +70,15 @@ class apiCore():
                 f.flush()
                 f.close()
 
-    '''""
+    '''
         Call remote api
     '''
     def call(self,key,data):
-        if key.lower() in self._apiRoute:
-            method=self._apiRoute[key.lower()]["method"]
-            uri=self._apiRoute[key.lower()]["uri"]
+        if key.lower() in getGlobalVariable(self._apiName):
+            '''method=self._apiRoute[key.lower()]["method"]
+            uri=self._apiRoute[key.lower()]["uri"]'''
+            method = getGlobalVariable(self._apiName)[key.lower()]["method"]
+            uri = getGlobalVariable(self._apiName)[key.lower()]["uri"]
             if uri:
                 if method.lower()=="get":
                     uri+="?"+data
@@ -74,6 +86,7 @@ class apiCore():
                 elif method.low()=="post":
                     return self._restfulPOST(uri,data)
             return False
+        return False
 
 
     def _restfulGET(self,uri):

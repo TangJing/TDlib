@@ -12,6 +12,11 @@ def getGlobalVariable(key,defaultValue=None):
         return _globaldict[key]
     except Exception as e:
         return defaultValue
+        
+def hasKey(key):
+    if key in _globaldict:
+        return True
+    return False
 
 '''
     define the system's event cache,if you have't set this param you can call deleteGlobalVariable to delete it;
