@@ -5,11 +5,14 @@ import json
 from bin.globalvar import *
 
 class apiCore():
-
-    '''
-        Initializing and load api route
-    '''
-    def __init__(self,apiName,version="v1",apiRouteFileName="/apiRoutePath"):
+    def __init__(self,apiName,version="v1",apiRouteFileName="apiRoutePath"):
+        '''Initializing and load api route
+            
+            Params:
+                apiName:api name
+                version:api version,default value is 'v1'
+                apiRouteFileName:api cache file name
+        '''
         self._apiName=apiName+"_"+version
         self._path=os.path.dirname(__file__)+"\\"+apiName+"\\"+version+"\\"
         if not os.path.exists(self._path):
@@ -44,39 +47,35 @@ class apiCore():
         else:
             return False
 
-    '''
-        Delete a api
-    '''
+    
     def delapi(self,key):
+        '''Delete a api
+        '''
         if key.lower() in getGlobalVariable(self._apiName):
             del getGlobalVariable(self._apiName)[key.lower()]
             return True
         else:
             return False
-    '''
-        Save api route to file
-    '''
+    
     def save(self):
-        #create file write buffer
-        wBuffer=""
+        '''Save api route to file
+        '''
+        wBuffer=""  #create file write buffer
         for item in getGlobalVariable(self._apiName):
             wBuffer+=json.dumps({"key":item,"value":getGlobalVariable(self._apiName)[item]})+"\r\n"
-        #save buffer to file
         if not wBuffer:
             wBuffer="\r\n"
-        if wBuffer:
+        if wBuffer:  #save buffer to file
             with open(self._routePath,mode='w',encoding='utf-8', errors=None, newline=None) as f:
                 f.write(wBuffer)
                 f.flush()
                 f.close()
 
-    '''
-        Call remote api
-    '''
+    
     def call(self,key,data):
+        '''Call remote api
+        '''
         if key.lower() in getGlobalVariable(self._apiName):
-            '''method=self._apiRoute[key.lower()]["method"]
-            uri=self._apiRoute[key.lower()]["uri"]'''
             method = getGlobalVariable(self._apiName)[key.lower()]["method"]
             uri = getGlobalVariable(self._apiName)[key.lower()]["uri"]
             if uri:
