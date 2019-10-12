@@ -1,6 +1,8 @@
+from Scheduler.base import *
+
 import abc
 import six
-from scheduler.base import *
+
 @six.add_metaclass(abc.ABCMeta)
 class InterfaceScheduler(Scheduler):
     @abc.abstractmethod
@@ -20,6 +22,6 @@ class InterfaceScheduler(Scheduler):
         super(InterfaceScheduler,self).__init__(name,plug,taskType,startTime,sleep)
 
     @abc.abstractmethod
-    def Run(self,*args,**kw):
+    def run(self,*args,**kw):
         """Run process
         """

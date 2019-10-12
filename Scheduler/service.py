@@ -7,11 +7,13 @@ import threading
 
 from bin.globalvar import *
 from TDlib.reflect import *
+from Scheduler.base import *
 
 
 class SchedulerService(threading.Thread):
-    def __init__(self,serializePath):
+    def __init__(self,serializeFile):
         threading.Thread.__init__(self)
+        self._cacheFile=serializeFile
         self._eventLock=threading.Event()
         self._eventLock.set()
         self._timeArray=[0]*86400  #一天的86400秒
@@ -33,13 +35,27 @@ class SchedulerService(threading.Thread):
                 self.run()
 
     def LoadConfig(self):
-        """Load scheduler config
-        """
+        """Load scheduler config"""
         pass
-    def Install(self,task):
-        """Install task
-        """
-        pass
+    def Install(self,task:Scheduler):
+        """Install task"""
+        config=task.Config()
+        '''config params
+        config["type"]
+        config["starttime"]
+        config["sleep"]
+        config["plug"]
+        config["name"]'''
+        with shelve.open(self._cacheFile,flag="c",writeback=True) as cFile:  #open config cache file
+            try:
+                if config["type"].lower() == "realtime":   #run on now
+                    pass
+                elif config["type"].lower() == "interval":  #loop run task
+                    pass
+                elif config["type"].lower() == "timming":  #run on datetime with oncee
+                    pass
+            finally:
+                cFile.close()
 
     def Uninstall(self,task):
         """Uninstall task

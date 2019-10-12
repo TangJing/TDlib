@@ -2,9 +2,8 @@
 class Scheduler():
     def __init__(self,name,plug,taskType="interval",startTime=None,sleep=0):
         """Init task
-
             params:
-                name:taskName
+                name: str
                 plug:call task module
                 taskType:task type
                     realtime:run at now

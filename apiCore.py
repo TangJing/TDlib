@@ -5,59 +5,86 @@ import json
 from bin.globalvar import *
 
 class apiCore():
-    def __init__(self,apiName,version="v1",apiRouteFileName="apiRoutePath"):
-        '''Initializing and load api route
-            
-            Params:
-                apiName:api name
-                version:api version,default value is 'v1'
-                apiRouteFileName:api cache file name
-        '''
+    '''apiCore
+
+       Args:
+            apiName (str):Open Api platform's Name.
+            version (str):Api's version, default value is "v1".
+            apiRouteFileName (str):Location cache file's name, default value is "apiRoutePath"
+            basePath (str):Location cache base path, defalut value is os.path.dirname(__file__)
+    '''
+    def __init__(self,apiName:str,version="v1",apiRouteFileName="apiRoutePath.arg",basePath=os.path.dirname(__file__)):
         self._apiName=apiName+"_"+version
-        self._path=os.path.dirname(__file__)+"\\"+apiName+"\\"+version+"\\"
-        if not os.path.exists(self._path):
+        self._path=basePath+"\\"+apiName+"\\"+version+"\\"
+        if not os.path.exists(self._path):  #if haven't this directory,create it.
             os.makedirs(self._path)
-        self._routePath=os.path.join(self._path,apiRouteFileName+".arp")
+        self._routePath=os.path.join(self._path,apiRouteFileName)  #generate the api route path
         if not hasKey(apiName+version):
             #create global route tables
             setGlobalVariable(self._apiName,dict())
         if self._routePath:
             if os.path.exists(self._routePath):
                 #read apiRouteFile and init apiroute
-                with open(self._routePath,mode='r',encoding='utf-8', errors=None, newline=None) as f:
-                    while True:
-                        line = f.readline().replace("\n","")
-                        if line:
-                            jsondoc=json.loads(line)
-                            if jsondoc["key"]:
-                                if jsondoc["value"]:
-                                    self.addapi(jsondoc["key"],jsondoc["value"]["uri"],jsondoc["value"]["method"])
-                        else:
-                            break
-                    f.close()
-
-    '''
-        Add a new api,and save route to file
-    '''
-    def addapi(self,key,apiUri,method="GET"):
+                try:
+                    with open(self._routePath,mode='r',encoding='utf-8', errors=None, newline=None) as f:
+                        while True:
+                            line = f.readline().replace("\n","")
+                            if line:
+                                jsondoc=json.loads(line)
+                                if jsondoc["key"]:
+                                    if jsondoc["value"]:
+                                        self.AddApi(jsondoc["key"],jsondoc["value"]["uri"],jsondoc["value"]["args"],jsondoc["value"]["method"],jsondoc["value"]["descrition"])
+                            else:
+                                break
+                        f.close()
+                except Exception as e:
+                    raise e
+    
+    def AddApi(self,key:str, apiUri:str, argsStr:str, method:str="GET", descrition:str=""):
+        '''Add a new api
+            
+            Args:
+                key (str): Api key.
+                apiUri (str): Api uri.
+                argsStr (str): Api uri args string format, Example: "gid={0}&name={1}".
+                method (str): Http method, default value is "GET".
+                descrition (str): api descrition.
+        '''
         #if key.lower() not in self._apiRoute:
         if key.lower() not in getGlobalVariable(self._apiName):
-            getGlobalVariable(self._apiName)[key.lower()]={"uri":apiUri,"method":method.lower()}
+            getGlobalVariable(self._apiName)[key.lower()]={"uri":apiUri,"args":argsStr, "method":method.lower(),"descrition":descrition}
             return True
         else:
             return False
 
-    
-    def delapi(self,key):
-        '''Delete a api
+    def GetArgsString(self, key:str):
+        '''Get api uri's param string
+
+            Args:
+                key (str): api key
         '''
-        if key.lower() in getGlobalVariable(self._apiName):
-            del getGlobalVariable(self._apiName)[key.lower()]
+        try:
+            key=key.lower()
+            if key in getGlobalVariable(self._apiName):
+                if "args" in getGlobalVariable(self._apiName)[key]:
+                    return getGlobalVariable(self._apiName)[key]["args"]
+        except Exception as e:
+            raise e
+
+    def DelApi(self, key:str):
+        '''Delete a api
+
+            Args:
+                key (str): api key
+        '''
+        key=key.lower()
+        if key in getGlobalVariable(self._apiName):
+            del getGlobalVariable(self._apiName)[key]
             return True
         else:
             return False
     
-    def save(self):
+    def SaveToFile(self):
         '''Save api route to file
         '''
         wBuffer=""  #create file write buffer
@@ -71,13 +98,22 @@ class apiCore():
                 f.flush()
                 f.close()
 
+    def ClearCache(self):
+        deleteGlobalVariable(self._apiName)  #删除全局变量
+        os.remove(self._routePath)  #删除缓存文件
+        os.removedirs(self._path)  #删除缓存目录
     
-    def call(self,key,data):
+    def Call(self, key:str, data:str):
         '''Call remote api
+
+            Args:
+                key (str): api key.
+                data (str): api uri's params string.
         '''
-        if key.lower() in getGlobalVariable(self._apiName):
-            method = getGlobalVariable(self._apiName)[key.lower()]["method"]
-            uri = getGlobalVariable(self._apiName)[key.lower()]["uri"]
+        key=key.lower()
+        if key in getGlobalVariable(self._apiName):
+            method = getGlobalVariable(self._apiName)[key]["method"]
+            uri = getGlobalVariable(self._apiName)[key]["uri"]
             if uri:
                 if method.lower()=="get":
                     uri+="?"+data
@@ -92,17 +128,20 @@ class apiCore():
         try:
             with urllib.request.urlopen(uri) as result:
                 if result.getcode()==200:
+                    result.close()
                     return result.read()
-                else:
-                    return None
+                result.close()
+                return ""
         except Exception as e:
-            return e
+            raise e
 
     def _restfulPOST(self,uri,data):
         try:
             with urllib.request.urlopen(uri,data) as result:
                 if result.getcode()==200:
+                    result.close()
                     return result.read()
-                return None
+                result.close()
+                return ""
         except Exception as e:
-            return e
+            raise e

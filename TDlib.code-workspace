@@ -4,5 +4,7 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"docker.defaultRegistryPath": "172.23.234.83:5000"
+	}
 }
