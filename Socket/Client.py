@@ -1,11 +1,15 @@
 import threading
+import re
 from Socket.sBase import *
 from Event.Event import *
 from Socket.model.SOCKET_MODELS import *
+
 class Client(eSocket,threading.Thread):
     def __init__(self,ip,port,buffSize=1024):
         threading.Thread.__init__(self)
         super(Client,self).__init__()
+        if re.match(r"^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$", ip, re.I | re.M):
+            ip= socket.gethostbyname(ip)
         self.uri=(ip,port)
         self.__runing=threading.Event()
         self._buffSize=buffSize

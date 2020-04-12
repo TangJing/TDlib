@@ -10,7 +10,9 @@ def logging_setup(config_json):
 def SYS_LOGS(func):
     def wapper(*args, **kwargs):
         try:
+            logging.info("start...")
             ret= func(*args, **kwargs)
+            logging.info("end...")
             return ret
         except Exception:
             logging.exception("System Faild.",exc_info= True)

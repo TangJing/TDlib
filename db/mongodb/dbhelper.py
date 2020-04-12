@@ -2,17 +2,18 @@
 # -*- coding: utf-8 -*-
 
 from db.mongodb.base import mongodbclient
-'''
-class\r\n
-    db(dbConfig)\r\n 
-description\r\n
-    mongodb db helper class\r\n
-'''
-class db(mongodbclient):
-    
-    def __init__(self,uri,dbName):
+
+db_cfg={
+    'url': 'mongodb://host.5ker.com:27017',
+    'db': 'spider_cache'
+}
+
+
+class dbhelper(mongodbclient):
+    def __init__(self):
         try:
-            super(db,self).__init__(uri,dbName)
+            super(dbhelper,self).__init__()
+            self.loadCfg(**db_cfg)
         except Exception as e:
             raise
 
@@ -76,12 +77,41 @@ class db(mongodbclient):
             raise e
     
     def find(self,**kwargs):
+        '''
+        查询记录并返回结果集
+
+        - parameters
+            **kwargs: { 'query'= usr_query_str, 'limit'= usr_limit}
+        '''
         try:
             if self.collection:
                 if "query" in kwargs:
                     if "limit" in kwargs:
                         return self.collection.find(kwargs["query"]).limit(kwargs["limit"])
                     return self.collection.find(kwargs["query"])
-                return None
+                else:
+                    if "limit" in kwargs:
+                        return self.collection.find().limit(kwargs["limit"])
+                    return self.collection.find()
+        except Exception as e:
+            raise e
+
+    def findByPage(self, **kwargs):
+        '''
+        查询记录并返回分页结果集
+
+        - parameters
+            **kwargs: { 'query': usr_query_str, 'pagesize': usr_pagesize, 'pageno': pageno}
+        '''
+        try:
+            if self.collection:
+                if "query" in kwargs:
+                    if ("pagesize" in kwargs) and ("pageno" in kwargs):
+                        m_skip= (int(kwargs['pageno'])-1) * pagesize
+                        if m_skip < 0:
+                            m_skip= 0
+                        return self.collection.find(kwargs["query"]).limit(kwargs["pagesize"]).skip(m_skip)
+                    return self.collection.find(kwargs["query"])
+                return self.collection.find()
         except Exception as e:
             raise e

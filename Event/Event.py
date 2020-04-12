@@ -66,7 +66,7 @@ class Event:
                 if self._state:
                     if self._keyconvert(key) in bin.globalvar.getGlobalVariable("EventList"):
                         if self._getEventListObject(key)["sync"]:
-                            self._getEventListObject(key)["func"](*args,**kw)
+                            return self._getEventListObject(key)["func"](*args,**kw)
                         else:
                             #todo asynchronous call back
                             pass#threading.Thread(target=self._getEventListObject(key)["func"],args=[*args,**kw,]).start()

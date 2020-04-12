@@ -4,14 +4,14 @@
 import bson
 import copy
 from bson.codec_options import CodecOptions
-from db.mongodb.dbhelper import db
+from db.mongodb.dbhelper import dbhelper
 '''
 class\r\n
     objectId
 description\r\n
     mongodb's bson.objectid\r\n
 '''
-class objectId(db):
+class objectId(dbhelper):
     model=None
     def __init__(self):
         super(objectId,self).__init__()
@@ -55,7 +55,16 @@ class objectId(db):
                 return None
         return None
 
-    def getResult(self,query):
+    def getByfield(self, field_name):
+        if field_name:
+            return self.findOne({field_name: self.model[field_name]})
+        return None
+
+    def UpdateById(self):
+        if self.oId:
+            self.update({'_id':self.oId}, self.model)
+
+    def getOneByQuery(self, query):
         if self.model:
             result=copy.deepcopy(self)
             if result:

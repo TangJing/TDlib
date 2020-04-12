@@ -20,6 +20,7 @@ class Server(eSocket,threading.Thread):
             self._flag.set()
             self.createsocket(SOCKET_TYPE.TCPIP)
             self.bind(self._uri)
+            self.on(SOCKET_EVENT.onListen.value, self._uri)
             self.listen(self._listenCount)
             self._accept()
         except Exception as e:
@@ -28,6 +29,7 @@ class Server(eSocket,threading.Thread):
     @trigger("accept")
     def _accept(self):
         try:
+            self.on(SOCKET_EVENT.onListenComplete.value, self._uri)
             while self._flag.is_set():
                 connection,address = self.accept()
                 if connection:

@@ -5,20 +5,14 @@ class linked_list:
     链表
     '''
     def __init__(self, resource: any):
-    '''
-    装饰对象为链表
-
-    - Parameters:
-        resource: 被装饰对象.
-    '''
         self.__key= None
         self.__expand_resource= resource
-        self.__nodes= []
+        self.__nodes=[]
 
     @property
     def key(self):
         return self.__key
-    
+
     @key.setter
     def key(self, value):
         self.__key= value

@@ -11,26 +11,21 @@ description\r\n
 class mongodbclient:
     client=None
     db=None
-    def __init__(self,uri=None,dbName=None):
+    def __init__(self):
+        self.collection= None
+        pass
+       
+    def loadCfg(self, **kwargs):
         '''
-        Feature\r\n
-            __init__(self,uri)\r\n
-        Description\r\n
-            初始化
-        Args\r\n
-            uri\r\n
-                type:string,example("mongodb://username:password@localhost:port")\r\n
-                description:mongodb server address\r\n
-            dbName
-                type:string
-                description:database name
+        加载MONGODB配置文件
+        - parameters:
+            kwargs: {url=mongodb://username:password@localhost:port, db= db_name}
         '''
-        self.collection=None
         if not self.client or not self.db:
-            if uri:
+            if kwargs['url']:
                 try:
-                    self.client=pymongo.MongoClient(uri)
-                    if dbName:
-                        self.db=self.client[dbName]
+                    self.client=pymongo.MongoClient(kwargs['url'])
+                    if kwargs['db']:
+                        self.db=self.client[kwargs['db']]
                 except Exception as e:
                     raise
