@@ -1,0 +1,13 @@
+/testThread.py
+/test.py
+/test1.py
+/*.bat
+*.pyc
+/__pycache__
+__pycache__
+/log/*.log
+/log/*.1
+/log/*.2
+/Dockerfile
+/docker-compose.debug.yml
+/docker-compose.yml
