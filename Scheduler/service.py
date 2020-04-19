@@ -5,9 +5,9 @@ import time
 import configparser
 import threading
 
-from bin.globalvar import *
+from TDlib.bin.globalvar import *
 from TDlib.reflect import *
-from Scheduler.base import *
+from TDlib.Scheduler.base import *
 
 
 class SchedulerService(threading.Thread):

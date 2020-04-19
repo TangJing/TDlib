@@ -1,6 +1,6 @@
 import socket
-from Socket.model.SOCKET_MODELS import SOCKET_TYPE
-from Event.Event import *
+from TDlib.Socket.model.SOCKET_MODELS import SOCKET_TYPE
+from TDlib.Event.Event import *
 
 class eSocket(Event):
         def __init__(self):

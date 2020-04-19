@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from db.mongodb.base import mongodbclient
-
-db_cfg={
+from TDlib.db.mongodb.base import mongodbclient
+db_cfg = {
     'url': 'mongodb://host.5ker.com:27017',
     'db': 'spider_cache'
 }
@@ -12,19 +11,22 @@ db_cfg={
 class dbhelper(mongodbclient):
     def __init__(self):
         try:
-            super(dbhelper,self).__init__()
-            self.loadCfg(**db_cfg)
+            super(dbhelper, self).__init__()
+            if db_cfg:
+                self.loadCfg(**db_cfg)
+            else:
+                raise "mongodb配置没有找到."
         except Exception as e:
             raise
 
-    def setCollection(self,collectionName):
+    def setCollection(self, collectionName):
         try:
             if self.db:
-                self.collection=self.db[collectionName]
+                self.collection = self.db[collectionName]
         except Exception as e:
             raise e
 
-    def save(self,args,flag="one"):
+    def save(self, args, flag="one"):
         '''
         Feature\r\n
             save(self,args,flag)\r\n
@@ -41,23 +43,23 @@ class dbhelper(mongodbclient):
         '''
         try:
             if self.collection:
-                if flag.lower()=="one":
+                if flag.lower() == "one":
                     return self.collection.insert_one(args)
-                elif flag.lower()=="many":
+                elif flag.lower() == "many":
                     return self.collection.insert_many(args)
             return None
         except Exception as e:
             raise e
-   
-    def update(self,query,args):
+
+    def update(self, query, args):
         try:
             if self.collection:
-                return self.collection.update(query,{'$set':args})
+                return self.collection.update(query, {'$set': args})
             return None
         except Exception as e:
             raise e
 
-    def remove(self,query=None):
+    def remove(self, query=None):
         try:
             if self.collection:
                 if query:
@@ -68,15 +70,15 @@ class dbhelper(mongodbclient):
         except Exception as e:
             raise e
 
-    def findOne(self,query):
+    def findOne(self, query):
         try:
             if self.collection:
                 return self.collection.find_one(query)
             return None
         except Exception as e:
             raise e
-    
-    def find(self,**kwargs):
+
+    def find(self, **kwargs):
         '''
         查询记录并返回结果集
 
@@ -107,9 +109,9 @@ class dbhelper(mongodbclient):
             if self.collection:
                 if "query" in kwargs:
                     if ("pagesize" in kwargs) and ("pageno" in kwargs):
-                        m_skip= (int(kwargs['pageno'])-1) * pagesize
+                        m_skip = (int(kwargs['pageno'])-1) * pagesize
                         if m_skip < 0:
-                            m_skip= 0
+                            m_skip = 0
                         return self.collection.find(kwargs["query"]).limit(kwargs["pagesize"]).skip(m_skip)
                     return self.collection.find(kwargs["query"])
                 return self.collection.find()

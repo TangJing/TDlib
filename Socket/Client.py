@@ -1,8 +1,8 @@
 import threading
 import re
-from Socket.sBase import *
-from Event.Event import *
-from Socket.model.SOCKET_MODELS import *
+from TDlib.Socket.sBase import *
+from TDlib.Event.Event import *
+from TDlib.Socket.model.SOCKET_MODELS import *
 
 class Client(eSocket,threading.Thread):
     def __init__(self,ip,port,buffSize=1024):

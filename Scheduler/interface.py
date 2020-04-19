@@ -1,4 +1,4 @@
-from Scheduler.base import *
+from TDlib.Scheduler.base import *
 
 import abc
 import six

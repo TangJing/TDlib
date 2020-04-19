@@ -11,49 +11,51 @@ class\r\n
 description\r\n
     mongodb's bson.objectid\r\n
 '''
+
+
 class objectId(dbhelper):
-    model=None
+    model = None
+
     def __init__(self):
-        super(objectId,self).__init__({
-            'url': 'mongodb://host.5ker.com:27017',
-            'db': 'spider_cache'
-        })
+        super(objectId, self).__init__()
         self.setCollection(type(self).__name__)
-        self.model={
-            "_id":None
+        self.model = {
+            "_id": None
         }
+
     @property
     def oId(self):
         if self.model["_id"]:
             return self.model["_id"]
         else:
-            self.model["_id"]=bson.objectid.ObjectId()
+            self.model["_id"] = bson.objectid.ObjectId()
             return self.model["_id"]
+
     @oId.setter
-    def oId(self,args):
+    def oId(self, args):
         if args:
-            self.model["_id"]=bson.objectid.ObjectId(args)
+            self.model["_id"] = bson.objectid.ObjectId(args)
         else:
-            self.model["_id"]=bson.objectid.ObjectId()
+            self.model["_id"] = bson.objectid.ObjectId()
 
     def toSave(self):
         if self.model:
-            if self.oId:  
+            if self.oId:
                 return self.save(self.model)
         else:
             return None
 
     def deleteById(self):
         if self.model:
-            return self.remove({'_id':self.oId})
+            return self.remove({'_id': self.oId})
 
     def getbyId(self):
         if self.model:
-            result=copy.deepcopy(self)
+            result = copy.deepcopy(self)
             if result:
-                oResult=self.findOne({'_id':self.oId})
+                oResult = self.findOne({'_id': self.oId})
                 if oResult:
-                    result.model=oResult
+                    result.model = oResult
                     return result
                 return None
         return None
@@ -65,14 +67,14 @@ class objectId(dbhelper):
 
     def UpdateById(self):
         if self.oId:
-            self.update({'_id':self.oId}, self.model)
+            self.update({'_id': self.oId}, self.model)
 
     def getOneByQuery(self, query):
         if self.model:
-            result=copy.deepcopy(self)
+            result = copy.deepcopy(self)
             if result:
-                oResult=self.findOne(query)
+                oResult = self.findOne(query)
                 if oResult:
-                    result.model=oResult
+                    result.model = oResult
                     return result
         return None

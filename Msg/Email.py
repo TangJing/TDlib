@@ -1,5 +1,5 @@
-from Msg.InterfaceMsg import *
-from apiCore import *
+from TDlib.Msg.InterfaceMsg import *
+from TDlib.apiCore import *
 
 class EmailByApi(Msg):
     def __init__(self):

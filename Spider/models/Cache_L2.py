@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum
 
-from db.mongodb.objectId import objectId
+from TDlib.Spider.models.Cache_L2_Model import objectId
 
 class RecordStatus(Enum):
     '''

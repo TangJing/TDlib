@@ -1,7 +1,7 @@
 import queue
 import copy
 from multiprocessing import Process,Lock
-from Event.Event import Event
+from TDlib.Event.Event import Event
 class pools(Event):
     def __init__(self, maxSize=100):
         '''
@@ -26,7 +26,6 @@ class pools(Event):
                 self._list.put(value)
         finally:
             self._lock.release()
-            self.on("onThreadComplete", self, value)
 
     def pop(self):
         try:

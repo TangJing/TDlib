@@ -1,4 +1,4 @@
-from Msg.Config import *
+from TDlib.Msg.Config import *
 from TDlib.apiCore import *
 import time
 import abc

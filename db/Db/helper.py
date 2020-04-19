@@ -1,5 +1,5 @@
 import os
-from db.Db.base import base
+from TDlib.db.Db.base import base
 
 m_dbDao=None
 

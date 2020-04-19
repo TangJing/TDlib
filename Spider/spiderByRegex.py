@@ -4,10 +4,10 @@ import os
 import re
 import hashlib
 import threading
-from generic.http_helper import m_http
-from Event.Event import Event
-from Spider.models.spider_event import event
-from Spider.models.status import STATUS as SPIDER_STATUS
+from TDlib.generic.http_helper import m_http
+from TDlib.Event.Event import Event
+from TDlib.Spider.models.spider_event import event
+from TDlib.Spider.models.status import STATUS as SPIDER_STATUS
 
 class reg_spider(Event):
     """
@@ -26,6 +26,7 @@ class reg_spider(Event):
         """
         super(reg_spider,self).__init__()
         self.__lock= threading.Lock() #线程锁主要用于同步回调函数.
+        self.__is_to_fingerprint= True # 默认开启验证页面内容重复.
         self.debug= False #调试模式开关
         self.__max_reconnect= max_reconnect
         self.__request= m_http()
@@ -92,6 +93,7 @@ class reg_spider(Event):
             url: default value is None, if has url then spider will get the url.
         '''
         if self.__config:
+            self.__is_to_fingerprint= True
             self.__response_html= None
             self.__status= SPIDER_STATUS.SPIDER_SUCCESS
             self.__prefix_domain= None
@@ -108,6 +110,15 @@ class reg_spider(Event):
                     return self.__onError(msg, SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
                 url= self.__config['entrance']
 
+            # 验证URL是否是入口地址，入口地址不检测页面重复性
+            if 'entrance' not in self.__config:
+                self.__is_to_fingerprint= True
+            else:
+                m_result= re.fullmatch(self.__config['entrance'], url, re.M | re.I)
+                if m_result:
+                    self.__is_to_fingerprint= False
+                else:
+                    self.__is_to_fingerprint= True
             # test url prefix
             if "prefix_domain" not in self.__config:
                 msg= "-{0}\r\n\t{1}".format(self.__current_url, "can't found config: root.prefix_domain .")
@@ -260,20 +271,21 @@ class reg_spider(Event):
                         self.__response_html= self.__response_html[offset_start : offset_end]
 
                         # create file fingerprint
-                        m_md5= hashlib.md5()
-                        m_md5.update(self.__response_html.encode('UTF-8'))
-                        m_fingerprint= m_md5.hexdigest()
-                        self.__fingerprint= m_fingerprint
-                        try:
-                            self.__lock.acquire()
-                            m_check_status= self.on(event.onFingerprintComplete,self)
-                        finally:
-                            self.__lock.release()
-                        if m_check_status:
-                            msg= "-{0}, {1}".format(self.__current_url, "内容没有变更.")
-                            self.__onError(msg, SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT)
-                            self.__next_url= None
-                            break
+                        if self.__is_to_fingerprint:
+                            m_md5= hashlib.md5()
+                            m_md5.update(self.__response_html.encode('UTF-8'))
+                            m_fingerprint= m_md5.hexdigest()
+                            self.__fingerprint= m_fingerprint
+                            try:
+                                self.__lock.acquire()
+                                m_check_status= self.on(event.onFingerprintComplete,self)
+                            finally:
+                                self.__lock.release()
+                            if m_check_status:
+                                msg= "-{0}, {1}".format(self.__current_url, "内容没有变更.")
+                                self.__onError(msg, SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT)
+                                self.__next_url= None
+                                break
 
                         # filter page html
                         self.__pagefilter(item, rules_count)
