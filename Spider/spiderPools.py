@@ -6,8 +6,7 @@ from TDlib.Spider.models.spider_event import event as Analysis_Event
 from TDlib.Spider.models.status import STATUS as SPIDER_STATUS
 from TDlib.Spider.models.fingerprint import fingerprint
 from TDlib.Cache.pools import pools
-from TDlib.Spider.models.Cache_L1 import L1, event as L1_EVENT
-from TDlib.Spider.models.Cache_L2 import L2
+from TDlib.Spider.models.Cache_L1 import L1, event as L1_EVENT, L2
 from threading import Thread
 
 import copy
@@ -18,14 +17,14 @@ class event(Enum):
 
 
 class spiderPools(pools):
-    def __init__(self, configPath=None, pool_length=10, cache_size=50):
+    def __init__(self, configPath=None, pool_length=10, cache_size=50, **kwargs):
         super(spiderPools, self).__init__(pool_length)
         self._cache = L1()
         self._exclude_url = {}
         self._cache.registerEvent(L1_EVENT.onPush, self.onPush)
         # 初始化爬虫线程池
         for i in range(0, pool_length):
-            m_spider = Analysis(configPath)
+            m_spider = Analysis(configPath, **kwargs)
             m_spider.registerEvent(
                 Analysis_Event.onIndexComplete, self.onIndexComplete)
             m_spider.registerEvent(
@@ -63,12 +62,14 @@ class spiderPools(pools):
                 if m_url[0]:
                     # 如果内容未更改则跳过；并认为后续翻页内容均为未更改内容,并同时跳过后续翻页爬取.
                     if m_url[0] not in self._exclude_url:
-                        process_spider.start(m_url[0])
+                        try:
+                            process_spider.start(m_url[0])
+                        except Exception as e:
+                            print(e)
                         if process_spider.getStatus == SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT:
                             if m_url[1]:
                                 if process_spider.getNextUrl:
-                                    self._exclude_url[m_url[1]
-                                                      ] = process_spider.getNextUrl
+                                    self._exclude_url[m_url[1]] = process_spider.getNextUrl
                 else:
                     m_state = False
             else:
@@ -84,7 +85,7 @@ class spiderPools(pools):
                 if data:
                     for item in data['data']:
                         self.pushCache([item['url'], m_analysis.getNextUrl])
-                    return self.on(event.onListen, *args, **kwargs)
+                    self.on(event.onListen, *args, **kwargs)
 
     def onListComplete(self, *args, **kwargs):
         if len(args) > 0:
@@ -97,6 +98,7 @@ class spiderPools(pools):
                         # 为了解决自动判断页面抓取重复取消下一页，此处存的来源为下一页
                         self.pushCache([item['url'], m_analysis.getNextUrl])
                     self.on(event.onListen, *args, **kwargs)
+            
             if m_analysis.getNextUrl:
                 self.pushCache(
                     [m_analysis.getNextUrl, m_analysis.getCurrentUrl])

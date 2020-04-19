@@ -5,6 +5,7 @@ import bson
 import copy
 from bson.codec_options import CodecOptions
 from TDlib.db.mongodb.dbhelper import dbhelper
+from TDlib.db.mongodb.setting import db_cfg
 '''
 class\r\n
     objectId
@@ -14,10 +15,7 @@ description\r\n
 class objectId(dbhelper):
     model=None
     def __init__(self):
-        super(objectId,self).__init__({
-            'url': 'mongodb://host.5ker.com:27017',
-            'db': 'spider_cache'
-        })
+        super(objectId,self).__init__()
         self.setCollection(type(self).__name__)
         self.model={
             "_id":None

@@ -39,12 +39,11 @@ class L1(Event):
                 m_records = m_L2.find(**{'limit': self._L1_Size})
                 if m_records.count() > 0:
                     for item in m_records:
-                        self._L1.put([item['url'], item['source']])
+                        self.push(item['url'], item['source'])
                         m_L2.model = item
                         m_L2.deleteById()
                 else:
                     return None
-                self.on(event.onPop, self)
             return self._L1.get()
         finally:
             thread_condition.release()

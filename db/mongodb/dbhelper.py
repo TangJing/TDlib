@@ -2,11 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from TDlib.db.mongodb.base import mongodbclient
-db_cfg = {
-    'url': 'mongodb://host.5ker.com:27017',
-    'db': 'spider_cache'
-}
-
+from TDlib.db.mongodb.setting import db_cfg
 
 class dbhelper(mongodbclient):
     def __init__(self):

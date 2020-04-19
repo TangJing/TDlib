@@ -27,12 +27,12 @@ from TDlib.Spider.models.status import STATUS as SPIDER_STATUS
 
 
 class Analysis(Event):
-    def __init__(self, configPATH):
+    def __init__(self, configPATH, **kwargs):
         super(Analysis, self).__init__()
         self.__http = m_http()  # HTTP对象
         self.__max_reconnect = 10  # 如果http访问失败最大重试次数
         self.__lock = threading.Lock()  # 线程锁主要用于同步回调函数.
-        self.__is_to_fingerprint = True  # 默认开启验证页面内容重复.
+        self.__is_to_fingerprint = True  # 验证页面内容重复临时开关.
         self.__fingerprint = None  # 临时缓存内容hash值
         self.debug = False  # 调试模式开关
         # 定义私有变量
@@ -42,7 +42,15 @@ class Analysis(Event):
         self.__nextUrl = None  # 生成翻页地址
         self.__state = SPIDER_STATUS.SPIDER_SUCCESS  # 爬虫状态
         self.__response_html = None  # 爬取到的内容
-        self.__data = dict({"type": '', "data": None, "html": ''})
+        self.__data = dict(
+            {"sources": '', "type": '', "data": None, "html": ''})
+        if len(kwargs) > 0:
+            for item in kwargs.keys():
+                if item.lower() == 'debug':
+                    self.debug = kwargs[item]
+                elif item.lower() == 'reconnect':
+                    self.__max_reconnect = kwargs[item]
+
         if configPATH:
             self.config(configPATH)
 
@@ -75,31 +83,36 @@ class Analysis(Event):
         入口
         '''
         self.__currentUrl = url
+
+        self.__url_check()
         if self.__state == SPIDER_STATUS.SPIDER_SUCCESS:
-            self.__url_check()
-            if self.__state == SPIDER_STATUS.SPIDER_SUCCESS:
-                self.__httpControl()
-                if self.__state == SPIDER_STATUS.HTTP_SUCCESS:
-                    # 进入规则路由
-                    self.__state = SPIDER_STATUS.SPIDER_SUCCESS
-                    self.__route()
+            self.__httpControl()
+            if self.__state == SPIDER_STATUS.HTTP_SUCCESS:
+                # 进入规则路由
+                self.__state = SPIDER_STATUS.SPIDER_SUCCESS
+                self.__route()
 
     def __url_check(self):
+        self.__state = SPIDER_STATUS.SPIDER_SUCCESS
+        self.__data['type'] = None
+        self.__data['data'] = None
+        self.__data['html'] = ''
         if self.__currentUrl == None:
-            if "entrance" in self.__config:
-                # if config hav't 'entrance' key, return.
-                self.__currentUrl = self.__config['entrance']
-                m_result = re.fullmatch(
-                    self.__config['entrance'], self.__currentUrl, re.M | re.I)
-                if m_result:
-                    self.__is_to_fingerprint = False
+            if self.__state != SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD:
+                if "entrance" in self.__config:
+                    # if config hav't 'entrance' key, return.
+                    self.__currentUrl = self.__config['entrance']
+                    m_result = re.fullmatch(
+                        self.__config['entrance'], self.__currentUrl, re.M | re.I)
+                    if m_result:
+                        self.__is_to_fingerprint = False
+                    else:
+                        self.__is_to_fingerprint = True
                 else:
                     self.__is_to_fingerprint = True
-            else:
-                self.__is_to_fingerprint = True
-                msg = "-root.entrance, can't found key."
-                return self.__error(msg, SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
-                # 验证URL是否是入口地址，入口地址不检测页面重复性
+                    msg = "-root.entrance, can't found key."
+                    return self.__error(msg, SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
+                    # 验证URL是否是入口地址，入口地址不检测页面重复性
         # test url prefix
         if "prefix_domain" not in self.__config:
             msg = "-root.prefix_domain, can't found key."
@@ -124,6 +137,8 @@ class Analysis(Event):
                         self.__config = json.load(json_file)
                         json_file.close()
                         self.__state = SPIDER_STATUS.SPIDER_SUCCESS
+                        if 'name' in self.__config:
+                            self.__data['sources'] = self.__config['name']
                 except Exception as e:
                     self.__error(e, SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
             else:
@@ -209,20 +224,21 @@ class Analysis(Event):
         生成内容指纹
         '''
         # create file fingerprint
-        if self.__is_to_fingerprint and not self.debug:
-            m_md5 = hashlib.md5()
-            m_md5.update(self.__response_html.encode('UTF-8'))
-            m_fingerprint = m_md5.hexdigest()
-            self.__fingerprint = m_fingerprint
-            try:
-                self.__lock.acquire()
-                m_check_status = self.on(event.onFingerprintComplete, self)
-                if m_check_status:
-                    self.__error(
-                        "内容没有改变.", SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT)
-                    #self.__nextUrl= None
-            finally:
-                self.__lock.release()
+        if not self.debug:
+            if self.__is_to_fingerprint:
+                m_md5 = hashlib.md5()
+                m_md5.update(self.__response_html.encode('UTF-8'))
+                m_fingerprint = m_md5.hexdigest()
+                self.__fingerprint = m_fingerprint
+                try:
+                    self.__lock.acquire()
+                    m_check_status = self.on(event.onFingerprintComplete, self)
+                    if m_check_status:
+                        self.__error(
+                            "内容没有改变.", SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT)
+                        #self.__nextUrl= None
+                finally:
+                    self.__lock.release()
 
     def __route(self):
         '''
@@ -483,7 +499,7 @@ class Analysis(Event):
                             self.__data['html'] = self.__response_html
                         else:
                             if data_count % fields_count:
-                                msg = "-{0}, {1}".format(self.__current_url, "数据长度与字段长度不一致: length({0}:{1})\r\n\tsplit_html({2})\r\n\tfields({3})".format(
+                                msg = "-{0}, {1}".format(self.__currentUrl, "数据长度与字段长度不一致: length({0}:{1})\r\n\tsplit_html({2})\r\n\tfields({3})".format(
                                     data_count, fields_count, str(m_data), str(cfg_serialize_data['fields'])))
                                 self.__error(
                                     msg, SPIDER_STATUS.SPIDER_SERIALIZE_ERROR)

@@ -13,7 +13,6 @@ class mongodbclient:
     db=None
     def __init__(self):
         self.collection= None
-        pass
        
     def loadCfg(self, **kwargs):
         '''
@@ -22,10 +21,15 @@ class mongodbclient:
             kwargs: {url=mongodb://username:password@localhost:port, db= db_name}
         '''
         if not self.client or not self.db:
-            if kwargs['url']:
-                try:
-                    self.client=pymongo.MongoClient(kwargs['url'])
-                    if kwargs['db']:
-                        self.db=self.client[kwargs['db']]
-                except Exception as e:
-                    raise
+            if "url" in kwargs and 'db' in kwargs:
+                if kwargs['url']:
+                    try:
+                        self.client=pymongo.MongoClient(kwargs['url'])
+                        if kwargs['db']:
+                            self.db=self.client[kwargs['db']]
+                    except Exception as e:
+                        raise e
+                else:
+                    raise Exception('mongodb url is none.')
+            else:
+                raise Exception("mongdb setting url or db is not define.")
