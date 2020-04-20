@@ -40,6 +40,9 @@ class spiderPools(pools):
     def pushCache(self, value):
         self._cache.push(value[0], value[1])
 
+    def getCache(self):
+        self._cache.pop()
+        
     def onPush(self, *args, **kwargs):
         if self.available_resources > 0:
             self.__startSpiderThread()

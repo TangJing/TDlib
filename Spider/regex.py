@@ -543,12 +543,15 @@ class Analysis(Event):
         cfg_item = self.__config['rules'][rules_index]
         if "check_fields_type" in cfg_item:
             for check_config in cfg_item['check_fields_type']:
-                if len(check_config) == 3:
+                if len(check_config) == 4:
                     if len(result) >= check_config[0]:
                         m_re_result = re.search(
                             check_config[1], result[check_config[0]], re.I | re.M)
                         if not m_re_result:
-                            result.insert(check_config[0], check_config[2])
+                            if check_config[3] == "insert":
+                                result.insert(check_config[0], check_config[2])
+                        else:
+                                re.sub(check_config[1], check_config[2], result[check_config[0]], count= 0, flags= 0)
         return result
     # oerror
 

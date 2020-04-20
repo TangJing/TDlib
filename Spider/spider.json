@@ -228,8 +228,8 @@
 				"serialize_type":"split",
 				"split_str": ",",
 				"check_fields_type":[
-					[0,"\\.(jpg|jpge|gif|bmp|png)", "source/image/cover/default.jpg"],
-					[0,"upload/|/upload/", "source/images/cover/default.jpg"]
+					[0,"\\.(jpg|jpge|gif|bmp|png)", "source/image/cover/default.jpg", "insert"],
+					[0,"^(upload/|/upload/)", "source/images/cover/default.jpg", "replace"]
 				],
 				"fields": ["img", "name", "remark", "alias", "director", "performer", "number", "c_type", "country", "language", "year", "update_date", "tag","description", "play_urls"]
 			}

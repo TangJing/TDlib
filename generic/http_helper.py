@@ -17,6 +17,7 @@ class m_http:
     def __init__(self):
         self.context = requests
         
+        
     #url:wetsite url address
     def getcontent(self,p_url, p_timeout= 5):
         '''
