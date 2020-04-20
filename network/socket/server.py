@@ -1,10 +1,8 @@
 import threading
-from TDlib.Socket.sBase import *
-from TDlib.Socket.model.SOCKET_MODELS import SOCKET_EVENT,SOCKET_TYPE
-from TDlib.Socket.cache.queue import Q
-from TDlib.Event.Event import *
+from TDlib.network.socket import base,SOCKET_TYPE,SOCKET_EVENT, Event,trigger,call
+from TDlib.network.socket.cache.queue import Q
 
-class Server(eSocket,threading.Thread):
+class Server(base,threading.Thread):
     def __init__(self, ip,port, listenCount=100,buffSize=1024):
         threading.Thread.__init__(self)
         super(Server,self).__init__()

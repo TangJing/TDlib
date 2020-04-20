@@ -11,3 +11,4 @@ __pycache__
 /Dockerfile
 /docker-compose.debug.yml
 /docker-compose.yml
+/Spider/spiderByRegex.py

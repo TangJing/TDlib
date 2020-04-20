@@ -3,7 +3,7 @@ import io
 import os
 import json
 from TDlib.bin.globalvar import *
-from TDlib.generic.REST_HTTP import GET, POST
+from TDlib.network.http.REST_HTTP import GET, POST
 
 
 class apiCore():

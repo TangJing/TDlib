@@ -1,11 +1,11 @@
 import socket
-from TDlib.Socket.model.SOCKET_MODELS import SOCKET_TYPE
+from TDlib.network.socket.model.SOCKET_MODELS import SOCKET_TYPE,SOCKET_EVENT
 from TDlib.Event.Event import *
 
-class eSocket(Event):
+class base(Event):
         def __init__(self):
                 self.__mysocket=None
-                super(eSocket,self).__init__()
+                super(base,self).__init__()
 
         def createsocket(self,sType=SOCKET_TYPE.TCPIP):
                 if sType==SOCKET_TYPE.TCPIP:

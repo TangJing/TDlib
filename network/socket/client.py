@@ -1,10 +1,9 @@
 import threading
 import re
-from TDlib.Socket.sBase import *
-from TDlib.Event.Event import *
-from TDlib.Socket.model.SOCKET_MODELS import *
+from TDlib.network.socket import base,SOCKET_TYPE,SOCKET_EVENT, Event,trigger,call
+import socket
 
-class Client(eSocket,threading.Thread):
+class Client(base,threading.Thread):
     def __init__(self,ip,port,buffSize=1024):
         threading.Thread.__init__(self)
         super(Client,self).__init__()
