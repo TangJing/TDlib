@@ -40,6 +40,10 @@ class objectId(dbhelper):
             self.model["_id"] = bson.objectid.ObjectId(args)
         else:
             self.model["_id"] = bson.objectid.ObjectId()
+    
+    def clear(self):
+        for item in self.model.keys():
+            self.model[item]= None
 
     def toSave(self):
         if self.model:

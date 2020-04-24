@@ -17,8 +17,9 @@ class event(Enum):
 
 
 class spiderPools(pools):
-    def __init__(self, configPath=None, pool_length=10, cache_size=50, **kwargs):
+    def __init__(self, configPath=None, pool_length=10, cache_size=50, fingerprint=True, **kwargs):
         super(spiderPools, self).__init__(pool_length)
+        self._fingerprint= fingerprint # 重复检查开关
         self._cache = L1()
         self._exclude_url = {}
         self._cache.registerEvent(L1_EVENT.onPush, self.onPush)
@@ -41,8 +42,8 @@ class spiderPools(pools):
         self._cache.push(value[0], value[1])
 
     def getCache(self):
-        self._cache.pop()
-        
+        return self._cache.getCache()
+
     def onPush(self, *args, **kwargs):
         if self.available_resources > 0:
             self.__startSpiderThread()
@@ -72,7 +73,8 @@ class spiderPools(pools):
                         if process_spider.getStatus == SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT:
                             if m_url[1]:
                                 if process_spider.getNextUrl:
-                                    self._exclude_url[m_url[1]] = process_spider.getNextUrl
+                                    self._exclude_url[m_url[1]
+                                                      ] = process_spider.getNextUrl
                 else:
                     m_state = False
             else:
@@ -88,7 +90,15 @@ class spiderPools(pools):
                 if data:
                     for item in data['data']:
                         self.pushCache([item['url'], m_analysis.getNextUrl])
-                    self.on(event.onListen, *args, **kwargs)
+                    
+                    try:
+                        self._lock.acquire()
+                        self.on(event.onListen, *args, **kwargs)
+                    except Exception as e:
+                        raise e
+                    finally:
+                        self._lock.release()
+                    
 
     def onListComplete(self, *args, **kwargs):
         if len(args) > 0:
@@ -100,8 +110,14 @@ class spiderPools(pools):
                     for item in m_data['data']:
                         # 为了解决自动判断页面抓取重复取消下一页，此处存的来源为下一页
                         self.pushCache([item['url'], m_analysis.getNextUrl])
-                    self.on(event.onListen, *args, **kwargs)
-            
+                    try:
+                        self._lock.acquire()
+                        self.on(event.onListen, *args, **kwargs)
+                    except Exception as e:
+                        raise e
+                    finally:
+                        self._lock.release()
+
             if m_analysis.getNextUrl:
                 self.pushCache(
                     [m_analysis.getNextUrl, m_analysis.getCurrentUrl])
@@ -111,15 +127,34 @@ class spiderPools(pools):
             m_analysis = args[0]
             if m_analysis.getStatus == SPIDER_STATUS.SPIDER_SUCCESS:
                 m_data = m_analysis.getData
-                return self.on(event.onListen, *args, **kwargs)
+                try:
+                    self._lock.acquire()
+                    self.on(event.onListen, *args, **kwargs)
+                except Exception as e:
+                    raise e
+                finally:
+                    self._lock.release()
 
     def onDebug(self, *args, **kwargs):
-        return self.on(event.onListen, *args, **kwargs)
+        try:
+            self._lock.acquire()
+            return self.on(event.onListen, *args, **kwargs)
+        except Exception as e:
+            raise e
+        finally:
+            self._lock.release()
 
     def onError(self, *args, **kwargs):
-        return self.on(event.onListen, *args, **kwargs)
+        try:
+            self._lock.acquire()
+            return self.on(event.onListen, *args, **kwargs)
+        except Exception as e:
+            raise e
+        finally:
+            self._lock.release()
 
     def onFingerprintComplete(self, *args, **kwargs):
+        m_status= False
         if len(args) > 0:
             m_analysis = args[0]
             page_fingerprint = m_analysis.getFingerprint
@@ -128,13 +163,17 @@ class spiderPools(pools):
             if result:
                 if page_fingerprint == result['fingerprint']:
                     # 删除爬虫库数据
-                    repeat_url = result['url']
-                    m_L2 = L2()
-                    m_L2.remove(
-                        {'$or': [{'url': repeat_url}, {'sources': repeat_url}]})
-                    m_L2 = None
-                    self._exclude_url[repeat_url]= m_analysis.getCurrentUrl
-                    return True
+                    if self._fingerprint:
+                        repeat_url = result['url']
+                        m_L2 = L2()
+                        m_L2.remove(
+                            {'$or': [{'url': repeat_url}, {'sources': repeat_url}]})
+                        m_L2 = None
+                        self._exclude_url[repeat_url] = m_analysis.getCurrentUrl
+                        m_status= True
+                    else:
+                        # 当设置为不检查重复时
+                        m_status= False
                 else:
                     m_fingerprint = fingerprint()
                     m_fingerprint.update(
@@ -146,12 +185,19 @@ class spiderPools(pools):
                             'lastupdatetime': datetime.datetime.now()
                         }
                     )
-                    return False
+                    m_status= False
             else:
                 m_fingerprint = fingerprint()
                 m_fingerprint.Fingerprint = page_fingerprint
                 m_fingerprint.Url = m_analysis.getCurrentUrl
                 m_fingerprint.LastUpdateTime = datetime.datetime.now()
                 m_fingerprint.toSave()
-                return False
-        return False
+                m_status= False
+        try:
+            self._lock.acquire()
+            self.on(event.onListen, *args, **kwargs)
+        except Exception as e:
+            raise e
+        finally:
+            self._lock.release()
+        return m_status

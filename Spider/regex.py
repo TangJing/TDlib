@@ -59,10 +59,6 @@ class Analysis(Event):
         return self.__state
 
     @property
-    def getNextUrl(self):
-        return self.__nextUrl
-
-    @property
     def getData(self):
         return self.__data
 

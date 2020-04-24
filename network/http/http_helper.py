@@ -39,6 +39,16 @@ class m_http:
             except Exception as e:
                 return e, "CONNECT_IS_ERROR"
 
+    def download(self,p_url, p_timeout= 5):
+        if self.context:
+            try:
+                self.res=self.context.get(url= p_url, timeout= p_timeout)
+                if self.res:
+                    return self.res.content, self.res.status_code
+                return p_url, "REQUESTS_OBJECT_IS_NULL"
+            except Exception as e:
+                return e, "CONNECT_IS_ERROR"
+
     def https(self,url,*args,**kwargs):
         '''
         certificate
