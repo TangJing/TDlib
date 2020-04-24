@@ -65,16 +65,17 @@ class spiderPools(pools):
             if m_url:
                 if m_url[0]:
                     # 如果内容未更改则跳过；并认为后续翻页内容均为未更改内容,并同时跳过后续翻页爬取.
-                    if m_url[0] not in self._exclude_url:
-                        try:
-                            process_spider.start(m_url[0])
-                        except Exception as e:
-                            print(e)
-                        if process_spider.getStatus == SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT:
-                            if m_url[1]:
-                                if process_spider.getNextUrl:
-                                    self._exclude_url[m_url[1]
-                                                      ] = process_spider.getNextUrl
+                    if m_url[1]:
+                        if m_url[1] in self._exclude_url:
+                            continue
+                    try:
+                        process_spider.start(m_url[0])
+                    except Exception as e:
+                        # 爬取出错，抛出异常
+                        self.on(event.onListen, process_spider, e)
+                    if process_spider.getStatus == SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT:
+                        if m_url[1]:
+                            self._exclude_url[m_url[1]] = process_spider.getCurrentUrl
                 else:
                     m_state = False
             else:
@@ -90,7 +91,6 @@ class spiderPools(pools):
                 if data:
                     for item in data['data']:
                         self.pushCache([item['url'], m_analysis.getNextUrl])
-                    
                     try:
                         self._lock.acquire()
                         self.on(event.onListen, *args, **kwargs)
@@ -169,7 +169,7 @@ class spiderPools(pools):
                         m_L2.remove(
                             {'$or': [{'url': repeat_url}, {'sources': repeat_url}]})
                         m_L2 = None
-                        self._exclude_url[repeat_url] = m_analysis.getCurrentUrl
+                        # self._exclude_url[m_analysis.getNextUrl] =repeat_url 
                         m_status= True
                     else:
                         # 当设置为不检查重复时
