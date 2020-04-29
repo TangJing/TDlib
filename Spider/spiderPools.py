@@ -72,7 +72,13 @@ class spiderPools(pools):
                         process_spider.start(m_url[0])
                     except Exception as e:
                         # 爬取出错，抛出异常
-                        self.on(event.onListen, process_spider, e)
+                        try:
+                            self._lock.acquire()
+                            self.on(event.onListen, process_spider, e)
+                        except Exception as e:
+                            raise e
+                        finally:
+                            self._lock.release()
                     if process_spider.getStatus == SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT:
                         if m_url[1]:
                             self._exclude_url[m_url[1]] = process_spider.getCurrentUrl

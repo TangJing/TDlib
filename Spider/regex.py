@@ -43,7 +43,7 @@ class Analysis(Event):
         self.__state = SPIDER_STATUS.SPIDER_SUCCESS  # 爬虫状态
         self.__response_html = None  # 爬取到的内容
         self.__data = dict(
-            {"sources": '', "type": '', "data": None, "html": ''})
+            {"sources": "","source_index": None, "type": '', "data": None, "html": ''})
         if len(kwargs) > 0:
             for item in kwargs.keys():
                 if item.lower() == 'debug':
@@ -135,6 +135,8 @@ class Analysis(Event):
                         self.__state = SPIDER_STATUS.SPIDER_SUCCESS
                         if 'name' in self.__config:
                             self.__data['sources'] = self.__config['name']
+                        if 'source_index' in self.__config:
+                            self.__data['source_index']= self.__config['source_index']
                 except Exception as e:
                     self.__error(e, SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
             else:
