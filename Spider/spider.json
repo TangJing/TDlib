@@ -1,10 +1,12 @@
 {
 	"name": "哈酷云资源",
+	"key": "HKY",
 	"source_index":1,
 	"domain": "666zy.com",
 	"entrance": "http://www.666zy.com",
 	"prefix_domain": "http://www.666zy.com",
 	"access_delays": 0,
+	"exclude":[],
 	"page_url":{
 		"verification_page_url": "\\?m=vod-type-id-[1-9]\\d*\\.html|\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*\\.html",
 		"page_param_index": 2,

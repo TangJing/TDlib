@@ -1,9 +1,11 @@
+import datetime
+
 from enum import Enum
 from threading import Condition
 from queue import Queue
 from TDlib.Event.Event import Event
 from TDlib.Spider.models.Cache_L2 import L2, RecordStatus
-import copy
+
 thread_condition = Condition()
 
 
@@ -14,17 +16,19 @@ class L1(Event):
         self._L1 = Queue(size)
         self._L2= L2()
 
-    def push(self, value, source_url=None):
+    def push(self, value, key, source_url=None):
         try:
             thread_condition.acquire()
             if not self._L1.full():
-                self._L1.put([value, source_url])
+                self._L1.put([value, source_url, key])
                 self.on(event.onPush, self)
             else:
                 # L1缓存数据存满了，将数据缓存到L2
                 self._L2.URL = value
                 self._L2.Source = source_url
                 self._L2.status = RecordStatus.WAIT.value
+                self._L2.Key= key
+                self._L2.updatetime= datetime.datetime.now()
                 self._L2.toSave()
                 self._L2.clear()
         finally:
@@ -47,9 +51,9 @@ class L1(Event):
         if m_records.count() > 0:
             for item in m_records:
                 if type==0:
-                    self.push(item['url'], item['source'])
+                    self.push(item['url'], item['key'], item['source'])
                 else:
-                    self._L1.put([item['url'], item['source']])
+                    self._L1.put([item['url'], item['source'], item['key']])
                 self._L2.model = item
                 self._L2.deleteById()
                 self._L2.clear()

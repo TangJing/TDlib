@@ -27,7 +27,7 @@ from TDlib.Spider.models.status import STATUS as SPIDER_STATUS
 
 
 class Analysis(Event):
-    def __init__(self, configPATH, **kwargs):
+    def __init__(self, rulesConfig, **kwargs):
         super(Analysis, self).__init__()
         self.__http = m_http()  # HTTP对象
         self.__max_reconnect = 10  # 如果http访问失败最大重试次数
@@ -36,14 +36,15 @@ class Analysis(Event):
         self.__fingerprint = None  # 临时缓存内容hash值
         self.debug = False  # 调试模式开关
         # 定义私有变量
-        self.__config = None  # 爬取规则配置
+        self.__config = dict()  # 爬取规则配置
+        self.__configKey = ''  # 规则KEY
         self.__prefix_domain = None  # 前缀名称
         self.__currentUrl = None  # 当前爬取地址
         self.__nextUrl = None  # 生成翻页地址
         self.__state = SPIDER_STATUS.SPIDER_SUCCESS  # 爬虫状态
         self.__response_html = None  # 爬取到的内容
         self.__data = dict(
-            {"sources": "","source_index": None, "type": '', "data": None, "html": ''})
+            {"sources": "", "source_index": None, "analysis_key": "", "type": '', "data": None, "html": ''})
         if len(kwargs) > 0:
             for item in kwargs.keys():
                 if item.lower() == 'debug':
@@ -51,8 +52,8 @@ class Analysis(Event):
                 elif item.lower() == 'reconnect':
                     self.__max_reconnect = kwargs[item]
 
-        if configPATH:
-            self.config(configPATH)
+        if rulesConfig:
+            self.config(rulesConfig)
 
     @property
     def getStatus(self):
@@ -74,18 +75,24 @@ class Analysis(Event):
     def getFingerprint(self):
         return self.__fingerprint
 
-    def start(self, url=None):
+    def start(self, key, url=None):
         '''
         入口
         '''
+        self.__configKey = key
         self.__currentUrl = url
-
         self.__url_check()
         if self.__state == SPIDER_STATUS.SPIDER_SUCCESS:
             self.__httpControl()
             if self.__state == SPIDER_STATUS.HTTP_SUCCESS:
                 # 进入规则路由
                 self.__state = SPIDER_STATUS.SPIDER_SUCCESS
+                if 'name' in self.__config[self.__configKey]:
+                    self.__data['sources'] = self.__config[self.__configKey]['name']
+                if 'source_index' in self.__config[self.__configKey]:
+                    self.__data['source_index'] = self.__config[self.__configKey]['source_index']
+                if 'key' in self.__config[self.__configKey]:
+                    self.__data['analysis_key'] = self.__config[self.__configKey]['key']
                 self.__route()
 
     def __url_check(self):
@@ -95,11 +102,11 @@ class Analysis(Event):
         self.__data['html'] = ''
         if self.__currentUrl == None:
             if self.__state != SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD:
-                if "entrance" in self.__config:
+                if "entrance" in self.__config[self.__configKey]:
                     # if config hav't 'entrance' key, return.
-                    self.__currentUrl = self.__config['entrance']
+                    self.__currentUrl = self.__config[self.__configKey]['entrance']
                     m_result = re.fullmatch(
-                        self.__config['entrance'], self.__currentUrl, re.M | re.I)
+                        self.__config[self.__configKey]['entrance'], self.__currentUrl, re.M | re.I)
                     if m_result:
                         self.__is_to_fingerprint = False
                     else:
@@ -110,40 +117,52 @@ class Analysis(Event):
                     return self.__error(msg, SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
                     # 验证URL是否是入口地址，入口地址不检测页面重复性
         # test url prefix
-        if "prefix_domain" not in self.__config:
+        if "prefix_domain" not in self.__config[self.__configKey]:
             msg = "-root.prefix_domain, can't found key."
             return self.__error(msg, SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
-        self.__prefix_domain = self.__config['prefix_domain']
+        self.__prefix_domain = self.__config[self.__configKey]['prefix_domain']
         if re.match(self.__prefix_domain, self.__currentUrl, re.M | re.I) == None:
             self.__currentUrl = self.__prefix_domain + self.__currentUrl
 
-    def config(self, path):
+    def __exclude(self, url):
+        '''
+        判断是否排除爬取
+
+        - Parameters:
+            - url: 爬取的地址.
+        '''
+        pass
+
+    def config(self, rulesConfig):
         '''
         加载配置文件
 
         - Parameters: 
             - path: string, 配置文件路径. 
         '''
-        if path:
-            # test config file path.
-            if os.path.exists(path):
-                # read config file, open by read mode.
-                try:
-                    with open(path, 'r', encoding="utf-8") as json_file:
-                        self.__config = json.load(json_file)
-                        json_file.close()
-                        self.__state = SPIDER_STATUS.SPIDER_SUCCESS
-                        if 'name' in self.__config:
-                            self.__data['sources'] = self.__config['name']
-                        if 'source_index' in self.__config:
-                            self.__data['source_index']= self.__config['source_index']
-                except Exception as e:
-                    self.__error(e, SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
+        if rulesConfig:
+            for item in rulesConfig:
+                if item['path']:
+                    # test config file path.
+                    if os.path.exists(item['path']):
+                        # read config file, open by read mode.
+                        try:
+                            with open(item['path'], 'r', encoding="utf-8") as json_file:
+                                self.__config[item['key']
+                                              ] = json.load(json_file)
+                                json_file.close()
+                                self.__state = SPIDER_STATUS.SPIDER_SUCCESS
+                        except Exception as e:
+                            self.__error(
+                                e, SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
+                    else:
+                        self.__error(
+                            "can't found config file.path(%s)" % str(item['path']), SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
             else:
-                self.__error(
-                    "can't found config file.path(%s)" % str(path), SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
+                self.__error('config path is null.',
+                             SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
         else:
-            self.__error('config path is null.',
+            self.__error('rules config is null.',
                          SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
 
     def __httpControl(self, time_out=5):
@@ -190,7 +209,7 @@ class Analysis(Event):
             self.__error('HTTP对象未定义.', SPIDER_STATUS.REQUEST_IS_NONE)
 
     def __generate_next_url(self):
-        item = self.__config
+        item = self.__config[self.__configKey]
         if item:
             if "page_url" in item:
                 if "verification_page_url" in item['page_url']:
@@ -242,12 +261,12 @@ class Analysis(Event):
         '''
         规则路由
         '''
-        if "rules" in self.__config:
+        if "rules" in self.__config[self.__configKey]:
             rule_total = 0
-            for item in self.__config['rules']:
-                if "url_checking" in self.__config['rules'][rule_total]:
+            for item in self.__config[self.__configKey]['rules']:
+                if "url_checking" in self.__config[self.__configKey]['rules'][rule_total]:
                     matching_rule = re.fullmatch(
-                        self.__config['rules'][rule_total]['url_checking'], self.__currentUrl, re.I | re.S)
+                        self.__config[self.__configKey]['rules'][rule_total]['url_checking'], self.__currentUrl, re.I | re.S)
                     if not matching_rule:
                         # 查找下一个规则
                         rule_total += 1
@@ -304,7 +323,7 @@ class Analysis(Event):
                                  rule_total, SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
                     break
             # 没有找到规则
-            if rule_total >= len(self.__config['rules']):
+            if rule_total >= len(self.__config[self.__configKey]['rules']):
                 self.__error(
                     '没有找到分析规则.', SPIDER_STATUS.SPIDER_PAGE_ANALYSIS_RULES_CAN_NOT_FOUND)
         else:
@@ -319,7 +338,7 @@ class Analysis(Event):
             - index: rules 索引
         '''
         # 计算截取开始结束位置
-        config_item = self.__config["rules"][index]
+        config_item = self.__config[self.__configKey]["rules"][index]
         if "start_anchor" not in config_item:
             return self.__error("root.rules.{0}.start_anchor" % str(index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
         if "end_anchor" not in config_item:
@@ -347,8 +366,8 @@ class Analysis(Event):
 
     def __action(self, index):
         action_config_item = None
-        if "actions" in self.__config['rules'][index]:
-            action_config_item = self.__config['rules'][index]['actions']
+        if "actions" in self.__config[self.__configKey]['rules'][index]:
+            action_config_item = self.__config[self.__configKey]['rules'][index]['actions']
             action_total = 0  # action计数
             for m_action in action_config_item:
                 # 执行分析
@@ -395,7 +414,7 @@ class Analysis(Event):
         '''
         backups_response_html = self.__response_html
         filter_html = ""
-        m_config = self.__config['rules'][rule_index]['actions'][action_index]
+        m_config = self.__config[self.__configKey]['rules'][rule_index]['actions'][action_index]
         m_re_state = re.search(
             m_config['extract_regex'], self.__response_html, flags=0)
         if not m_re_state:
@@ -428,7 +447,7 @@ class Analysis(Event):
             - action_index: 动作索引.
         '''
         backups_response_html = self.__response_html
-        m_config = self.__config['rules'][rule_index]['actions'][action_index]
+        m_config = self.__config[self.__configKey]['rules'][rule_index]['actions'][action_index]
         if 'extract_regex' in m_config:
             self.__response_html = re.sub(
                 m_config['extract_regex'], m_config['replace_str'], self.__response_html, count=0, flags=0)
@@ -450,7 +469,7 @@ class Analysis(Event):
             - action_index: 动作索引.
         '''
         backups_response_html = self.__response_html
-        m_config = self.__config['rules'][rule_index]['actions'][action_index]
+        m_config = self.__config[self.__configKey]['rules'][rule_index]['actions'][action_index]
         if 'html' in m_config:
             self.__response_html += m_config['html']
             if 'debug' in m_config:
@@ -470,7 +489,7 @@ class Analysis(Event):
             - reule_index: 规则索引.
             - action_index: 动作索引.
         '''
-        cfg_item = self.__config['rules'][rules_index]
+        cfg_item = self.__config[self.__configKey]['rules'][rules_index]
         if 'serialize_data' in cfg_item:
             cfg_serialize_data = cfg_item['serialize_data']
             if "serialize_type" in cfg_serialize_data:
@@ -538,7 +557,7 @@ class Analysis(Event):
             - action_index: 动作索引.
             - result: []
         '''
-        cfg_item = self.__config['rules'][rules_index]
+        cfg_item = self.__config[self.__configKey]['rules'][rules_index]
         if "check_fields_type" in cfg_item:
             for check_config in cfg_item['check_fields_type']:
                 if len(check_config) == 4:
@@ -549,7 +568,8 @@ class Analysis(Event):
                             if check_config[3] == "insert":
                                 result.insert(check_config[0], check_config[2])
                         else:
-                                re.sub(check_config[1], check_config[2], result[check_config[0]], count= 0, flags= 0)
+                            re.sub(
+                                check_config[1], check_config[2], result[check_config[0]], count=0, flags=0)
         return result
     # oerror
 

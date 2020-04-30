@@ -17,15 +17,15 @@ class event(Enum):
 
 
 class spiderPools(pools):
-    def __init__(self, configPath=None, pool_length=10, cache_size=50, fingerprint=True, **kwargs):
+    def __init__(self, rulesConfig, pool_length=10, cache_size=50, fingerprint=True, **kwargs):
         super(spiderPools, self).__init__(pool_length)
         self._fingerprint= fingerprint # 重复检查开关
-        self._cache = L1()
+        self._cache = L1(cache_size)
         self._exclude_url = {}
         self._cache.registerEvent(L1_EVENT.onPush, self.onPush)
         # 初始化爬虫线程池
         for i in range(0, pool_length):
-            m_spider = Analysis(configPath, **kwargs)
+            m_spider = Analysis(rulesConfig, **kwargs)
             m_spider.registerEvent(
                 Analysis_Event.onIndexComplete, self.onIndexComplete)
             m_spider.registerEvent(
@@ -39,7 +39,7 @@ class spiderPools(pools):
             self.push(m_spider)
 
     def pushCache(self, value):
-        self._cache.push(value[0], value[1])
+        self._cache.push(value[0], value[2], value[1])
 
     def getCache(self):
         return self._cache.getCache()
@@ -69,7 +69,7 @@ class spiderPools(pools):
                         if m_url[1] in self._exclude_url:
                             continue
                     try:
-                        process_spider.start(m_url[0])
+                        process_spider.start(m_url[2], m_url[0])
                     except Exception as e:
                         # 爬取出错，抛出异常
                         try:
@@ -96,7 +96,7 @@ class spiderPools(pools):
                 data = m_analysis.getData
                 if data:
                     for item in data['data']:
-                        self.pushCache([item['url'], m_analysis.getNextUrl])
+                        self.pushCache([item['url'], m_analysis.getNextUrl, data['analysis_key']])
                     try:
                         self._lock.acquire()
                         self.on(event.onListen, *args, **kwargs)
@@ -115,7 +115,7 @@ class spiderPools(pools):
                     # TODO
                     for item in m_data['data']:
                         # 为了解决自动判断页面抓取重复取消下一页，此处存的来源为下一页
-                        self.pushCache([item['url'], m_analysis.getNextUrl])
+                        self.pushCache([item['url'], m_analysis.getNextUrl, m_data['analysis_key']])
                     try:
                         self._lock.acquire()
                         self.on(event.onListen, *args, **kwargs)

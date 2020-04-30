@@ -19,6 +19,7 @@ class L2(objectId):
         super(L2, self).__init__()
         self.model['url']= None
         self.model['source']= None
+        self.model['key']= None
         self.model['status']= RecordStatus.WAIT.value
         self.model['updatetime']= datetime.datetime.now()
 
@@ -37,6 +38,13 @@ class L2(objectId):
     @Source.setter
     def Source(self, value):
         self.model['source']= value
+    @property
+    def Key(self):
+        return self.model['key']
+    
+    @Key.setter
+    def Key(self, value):
+        self.model['key']= value
 
     @property
     def status(self):
