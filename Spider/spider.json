@@ -1,6 +1,8 @@
 {
 	"name": "哈酷云资源",
 	"key": "HKY",
+	"debug": false,
+	"reconnect":5,
 	"source_index":1,
 	"domain": "666zy.com",
 	"entrance": "http://www.666zy.com",
