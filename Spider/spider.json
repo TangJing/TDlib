@@ -40,6 +40,11 @@
 					"action": "replace",
 					"extract_regex": "</a>",
 					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": "片",
+					"replace_str": ""
 				}
 			],
 			"serialize_data": {
@@ -104,6 +109,11 @@
 					"action": "replace",
 					"extract_regex":"/\\?m=vod-type-id-[1-9]\\d*.html,",
 					"replace_str":""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "片",
+					"replace_str": ""
 				}
 			],
 			"serialize_data":{
@@ -226,6 +236,11 @@
 				{
 					"action": "replace",
 					"extract_regex": "\\|#end",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "片",
 					"replace_str": ""
 				}
 			],

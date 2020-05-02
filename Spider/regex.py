@@ -87,9 +87,9 @@ class Analysis(Event):
                 if 'key' in self.__config[self.__configKey]:
                     self.__data['analysis_key'] = self.__config[self.__configKey]['key']
                 if 'debug' in self.__config[self.__configKey]:
-                    self.debug= self.__config[self.__configKey]['debug']
+                    self.debug = self.__config[self.__configKey]['debug']
                 if 'reconnect' in self.__config[self.__configKey]:
-                    self.__max_reconnect= self.__config[self.__configKey]['reconnect']
+                    self.__max_reconnect = self.__config[self.__configKey]['reconnect']
                 self.__route()
 
     def __url_check(self):
@@ -154,8 +154,8 @@ class Analysis(Event):
                     else:
                         raise Exception(
                             "can't found config file. path(%s)" % str(item['path']))
-            else:
-                raise Exception('config path is null.')
+                else:
+                    raise Exception('config path is null.')
         else:
             raise Exception('rules config is null.')
 
@@ -244,9 +244,11 @@ class Analysis(Event):
                 try:
                     self.__lock.acquire()
                     if self.debug:
-                        self.on(event.onDebug, self, {"event": event.onFingerprintComplete, "data": self.__data})
+                        self.on(
+                            event.onDebug, self, **{"event": event.onFingerprintComplete, "data": self.__data})
                     else:
-                        m_check_status = self.on(event.onFingerprintComplete, self)
+                        m_check_status = self.on(
+                            event.onFingerprintComplete, self)
                     if m_check_status:
                         self.__error(
                             "内容没有改变.", SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT)
@@ -289,9 +291,11 @@ class Analysis(Event):
                                     try:
                                         self.__lock.acquire()
                                         if self.debug:
-                                            self.on(event.onDebug, self, **{"event": event.onIndexComplete, "data": self.__data})
+                                            self.on(
+                                                event.onDebug, self, **{"event": event.onIndexComplete, "data": self.__data})
                                         else:
-                                            self.on(event.onIndexComplete, self)
+                                            self.on(
+                                                event.onIndexComplete, self)
                                     finally:
                                         self.__lock.release()
                                 elif m_type == "list":
@@ -302,7 +306,8 @@ class Analysis(Event):
                                         if (self.__state != SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT) and (self.__state != SPIDER_STATUS.SPIDER_PAGE_ANALYSIS_FILTER_FAIL):
                                             self.__generate_next_url()
                                         if self.debug:
-                                            self.on(event.onDebug, self, **{"event": event.onListComplete, "data": self.__data})
+                                            self.on(
+                                                event.onDebug, self, **{"event": event.onListComplete, "data": self.__data})
                                         else:
                                             self.on(event.onListComplete, self)
                                     finally:
@@ -312,9 +317,11 @@ class Analysis(Event):
                                     try:
                                         self.__lock.acquire()
                                         if self.debug:
-                                            self.on(event.onDebug, self, **{"event": event.onDetailComplete, "data": self.__data})
+                                            self.on(
+                                                event.onDebug, self, **{"event": event.onDetailComplete, "data": self.__data})
                                         else:
-                                            self.on(event.onDetailComplete, self)
+                                            self.on(
+                                                event.onDetailComplete, self)
                                     finally:
                                         self.__lock.release()
                                 else:
@@ -399,6 +406,11 @@ class Analysis(Event):
                         self.__insertHtml(index, action_total)
                     else:
                         break
+                elif action_type == "validate":
+                    if self.__state == SPIDER_STATUS.SPIDER_SUCCESS:
+                        self.__validate(index, action_total)
+                    else:
+                        break
                 else:
                     self.__error("找不到分析器, root.rules.{0}.actions.{1}.action." % (
                         index, action_total), SPIDER_STATUS.SPIDER_PAGE_ANALYSIS_ACTION_FAIL)
@@ -409,6 +421,41 @@ class Analysis(Event):
         else:
             self.__error('root.rules.{0},actions, can''t found key.' %
                          index, SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
+
+    def __validate(self, rule_index, action_index):
+        '''
+        验证数据
+        '''
+        backups_response_html = self.__response_html
+        m_config = self.__config[self.__configKey]['rules'][rule_index]['actions'][action_index]
+        if "extract_regex" in m_config:
+            m_body = re.search(
+                m_config['extract_regex'], self.__response_html, re.I | re.M)
+            if 'condition' in m_config:
+                if bool(m_body) == m_config['condition']:
+                    if 'func' in m_config:
+                        if ('extract_regex' in m_config['func']) and ('replace_str' in m_config['func']):
+                            tmp_body = ''
+                            body= m_body.group()
+                            tmp_body = re.sub(m_config['func']['extract_regex'],
+                                                   m_config['func']['replace_str'], body, count=0, flags=0)
+                            self.__response_html = re.sub(
+                                m_config['extract_regex'], tmp_body, self.__response_html, count=0, flags=0)
+                            if 'debug' in m_config:
+                                if m_config['debug']:
+                                    self.on(event.onDebug, self, **{"event": 'actiondebug', "data": "-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(self.getCurrentUrl, m_config['extract_regex'], backups_response_html, self.__response_html)})
+                        else:
+                            self.__error("root.rules.{0}.actons.{1}.func extract_regex or replace_str, can't found key." % (
+                                rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
+                    else:
+                        self.__error("root.rules.{0}.actons.{1}.func, can't found key." % (
+                            rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
+            else:
+                self.__error("root.rules.{0}.actons.{1}.condition, can't found key." % (
+                    rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
+        else:
+            self.__error("root.rules.{0}.actons.{1}.extract_regex, can't found key." % (
+                rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
 
     def __filter(self, rule_index, action_index):
         '''
@@ -437,8 +484,8 @@ class Analysis(Event):
                     self.__status = SPIDER_STATUS.SPIDER_ERROR
                 if 'debug' in m_config:
                     if m_config['debug']:
-                        self.on(event.onDebug, self, {"event": 'actiondebug', "data": "-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(
-                            self.currentUrl, m_config['extract_regex'], backups_response_html, self.__response_html)})
+                        self.on(event.onDebug, self, **{"event": 'actiondebug', "data": "-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(
+                            self.getCurrentUrl, m_config['extract_regex'], backups_response_html, self.__response_html)})
             else:
                 self.__error("root.rules.{0}.actons.{1}.extract_regex, can't found key." % (
                     rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
@@ -459,8 +506,8 @@ class Analysis(Event):
                 m_config['extract_regex'], m_config['replace_str'], self.__response_html, count=0, flags=0)
             if 'debug' in m_config:
                 if m_config['debug']:
-                    self.on(event.onDebug, self, {"event": 'actiondebug', "data":"-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(
-                        self.currentUrl, m_config['extract_regex'], backups_response_html, self.__response_html)})
+                    self.on(event.onDebug, self, **{"event": 'actiondebug', "data": "-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(
+                        self.getCurrentUrl, m_config['extract_regex'], backups_response_html, self.__response_html)})
         else:
             self.__error("root.rules.{0}.actons.{1}.extract_regex, can't found key." % (
                 rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
@@ -477,11 +524,17 @@ class Analysis(Event):
         backups_response_html = self.__response_html
         m_config = self.__config[self.__configKey]['rules'][rule_index]['actions'][action_index]
         if 'html' in m_config:
-            self.__response_html += m_config['html']
+            ret = "end"
+            if "pos" in m_config:
+                ret = m_config['pos']
+            if ret == 'end':
+                self.__response_html += m_config['html']
+            elif ret == "head":
+                self.__response_html = m_config['html'] + self.__response_html
             if 'debug' in m_config:
                 if m_config['debug']:
-                    self.on(event.onDebug, self, {"event": 'actiondebug', "data":"-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(
-                        self.currentUrl, m_config['extract_regex'], backups_response_html, self.__response_html)})
+                    self.on(event.onDebug, self, **{"event": 'actiondebug', "data": "-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(
+                        self.getCurrentUrl, m_config['extract_regex'], backups_response_html, self.__response_html)})
         else:
             self.__error("root.rules.{0}.actons.{1}.html, can't found key." % (
                 rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
