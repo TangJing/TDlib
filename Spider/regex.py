@@ -36,6 +36,7 @@ class Analysis(Event):
         self.__fingerprint = None  # 临时缓存内容hash值
         self.debug = False  # 调试模式开关
         # 定义私有变量
+        self.__define_var= dict() # 变量缓存
         self.__config = dict()  # 爬取规则配置
         self.__configKey = ''  # 规则KEY
         self.__prefix_domain = None  # 前缀名称
@@ -94,6 +95,7 @@ class Analysis(Event):
 
     def __url_check(self):
         self.__state = SPIDER_STATUS.SPIDER_SUCCESS
+        self.__define_var= dict()
         self.__data['type'] = None
         self.__data['data'] = None
         self.__data['html'] = ''
@@ -271,6 +273,11 @@ class Analysis(Event):
                         rule_total += 1
                         continue
                     else:
+                        # 定义变量
+                        if 'define' in item:
+                            for define_config in item['define']:
+                                self.__define(config= define_config)
+
                         # 找到规则进行内容截取
                         self.__interceptPage(rule_total)
                         if self.__state == SPIDER_STATUS.SPIDER_SUCCESS:
@@ -490,6 +497,35 @@ class Analysis(Event):
                 self.__error("root.rules.{0}.actons.{1}.extract_regex, can't found key." % (
                     rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
         backups_response_html = None
+
+    def __define(self,config):
+        '''定义变量
+
+            config json:
+        
+            "define": [
+                    {
+                        "key": "变量名称",
+                        "extract_regex": "提取正则",
+                        "func": [
+                            {
+                                "extract_regex": "正则",
+                                "replace_str":"替换字段"
+                            }
+                        ]
+                    }
+                ]
+        '''
+        m_config= config
+        try:
+            m_body= re.search(m_config['extract_regex'],self.__response_html, re.I|re.M)
+            if m_body:
+                value= m_body.group()
+                for item in m_config['func']:
+                    value= re.sub(item['extract_regex'],item['replace_str'],value,count=0, flags=0)
+                self.__define_var[m_config['key']]= value
+        except Exception as e:
+            raise e
 
     def __replace(self, rule_index, action_index):
         '''

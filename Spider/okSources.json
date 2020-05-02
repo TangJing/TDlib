@@ -2,27 +2,33 @@
 	"name": "OK资源",
 	"key": "OKZY",
 	"debug": false,
-	"reconnect":5,
-	"source_index":2,
+	"reconnect": 5,
+	"source_index": 2,
 	"domain": "iokzy.com",
 	"entrance": "http://api.iokzy.com",
 	"prefix_domain": "http://api.iokzy.com",
 	"access_delays": 0,
-	"exclude":[],
-	"page_url":{
+	"exclude": [],
+	"page_url": {
 		"verification_page_url": "\\?m=vod-type-id-[1-9]\\d*\\.html|\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*\\.html",
 		"page_param_index": 2,
 		"template": "?m=vod-type-id-{0[0]}-pg-{0[1]}.html"
 	},
-	"rules": [{
+	"rules": [
+		{
 			"type": "index",
 			"url_checking": "http://api.iokzy.com",
 			"start_anchor": "<ul id=\"sddm\">",
 			"end_anchor": "<div class=\"container\">",
-			"page_filter": [["regular","replace_str"]],
-			"spider_url":"",
+			"page_filter": [
+				[
+					"regular",
+					"replace_str"
+				]
+			],
+			"spider_url": "",
 			"actions": [
-                {
+				{
 					"action": "filter",
 					"extract_regex": "<a.*?</a>"
 				},
@@ -40,46 +46,61 @@
 					"action": "replace",
 					"extract_regex": "<a href=\"",
 					"replace_str": ""
-                },
-                {
+				},
+				{
 					"action": "replace",
 					"extract_regex": "\".*?>",
 					"replace_str": ","
 				},
-                {
+				{
 					"action": "replace",
 					"extract_regex": "</a>",
 					"replace_str": ","
-                }
-                ,{
-                    "action": "replace",
-                    "extract_regex":",(\r|\n|\r\n)",
-                    "replace_str": ","
-                },
-                {
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",(\r|\n|\r\n)",
+					"replace_str": ","
+				},
+				{
 					"action": "inserhtml",
 					"html": "#end"
-                },
-                {
-                    "action": "replace",
-                    "extract_regex":",#end",
-                    "replace_str": ""
-                }
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",#end",
+					"replace_str": ""
+				}
 			],
 			"serialize_data": {
-				"serialize_type":"split",
+				"serialize_type": "split",
 				"split_str": ",",
-				"fields": ["url", "type"]
+				"fields": [
+					"url",
+					"type"
+				]
 			}
-        },
+		},
 		{
 			"type": "list",
 			"url_checking": "http://api.iokzy.com/\\?m=vod-type-id-[1-9]\\d*\\.html|http://api.iokzy.com/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*\\.html",
 			"start_anchor": "<div class=\"xing_vb\">",
 			"end_anchor": "<!-- 底部截取标签-->",
 			"page_filter": [],
-			"spider_url":"/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*.html",
-			"actions":[
+			"spider_url": "/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*.html",
+			"define": [
+				{
+					"key": "topycategory",
+					"extract_regex": "&nbsp;<a.*?>.*?</a></dd>",
+					"func": [
+						{
+							"extract_regex": "<.*?>|</.*?>|&nbsp;|片",
+							"replace_str":""
+						}
+					]
+				}
+			],
+			"actions": [
 				{
 					"action": "filter",
 					"extract_regex": "<a href=.*?</span>.*?</span>.*?</span>"
@@ -91,78 +112,83 @@
 				},
 				{
 					"action": "replace",
-					"extract_regex":"<a href=\"",
-					"replace_str":""
+					"extract_regex": "<a href=\"",
+					"replace_str": ""
 				},
 				{
 					"action": "replace",
-					"extract_regex":"\" target=\"_blank\">",
-					"replace_str":","
-                },
-                {
-					"action": "replace",
-					"extract_regex":"(<|</).*?>",
-					"replace_str":","
-                },
-                {
-					"action": "replace",
-					"extract_regex":" ",
-                    "replace_str":""
+					"extract_regex": "\" target=\"_blank\">",
+					"replace_str": ","
 				},
 				{
 					"action": "replace",
-					"extract_regex":",,,,|,,,|,,",
-					"replace_str":","
+					"extract_regex": "(<|</).*?>",
+					"replace_str": ","
 				},
 				{
 					"action": "replace",
-					"extract_regex":",(\r|\n|\r\n|\t)",
-					"replace_str":","
+					"extract_regex": " ",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",,,,|,,,|,,",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",(\r|\n|\r\n|\t)",
+					"replace_str": ","
 				},
 				{
 					"action": "inserhtml",
-                    "html": "#head",
-                    "pos": "head"
-                },
-                {
-					"action": "inserhtml",
-                    "html": "#end"
+					"html": "#head",
+					"pos": "head"
 				},
-                {
+				{
+					"action": "inserhtml",
+					"html": "#end"
+				},
+				{
 					"action": "replace",
-					"extract_regex":"#head,|#head",
-					"replace_str":""
-                },
-                {
+					"extract_regex": "#head,|#head",
+					"replace_str": ""
+				},
+				{
 					"action": "replace",
-					"extract_regex":",#end|#end",
-					"replace_str":""
-                },
-                {
-                    "action":"replace",
-                    "extract_regex":"BD|HD|更新(.*?)集|完结",
-                    "replace_str":""
-                },
-                {
-                    "action":"replace",
-                    "extract_regex":"更新至\\d*?,",
-                    "replace_str": ","
-                },
-                {
-                    "action":"replace",
-                    "extract_regex":" ",
-                    "replace_str": ""
-                },
-                {
-                    "action":"replace",
-                    "extract_regex":"片,",
-                    "replace_str":","
-                }
+					"extract_regex": ",#end|#end",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "BD|HD|更新(.*?)集|完结",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "更新至\\d*?,",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": " ",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "片,",
+					"replace_str": ","
+				}
 			],
-			"serialize_data":{
-				"serialize_type":"split",
+			"serialize_data": {
+				"serialize_type": "split",
 				"split_str": ",",
-				"fields": ["url", "name", "c_type","lastupdate" ]
+				"fields": [
+					"url",
+					"name",
+					"c_type",
+					"lastupdate"
+				]
 			}
 		},
 		{
@@ -171,85 +197,85 @@
 			"error_next": false,
 			"start_anchor": "<div class=\"warp\">",
 			"end_anchor": "<!-- 底部截取标签-->",
-            "page_filter": [],
-			"actions":[
+			"page_filter": [],
+			"actions": [
 				{
 					"action": "replace",
-					"extract_regex":"<!--.*?-->",
-					"replace_str":""
+					"extract_regex": "<!--.*?-->",
+					"replace_str": ""
 				},
 				{
 					"action": "filter",
 					"extract_regex": "<h2>.*</h2>|<span>.*</span>|<img class=\"lazy\" src=\".*\" alt=\".*\" />|<div class=\"vodplayinfo\">.*</div>|/>.*?\\.(m3u8|mp4)<|<h3>.*?</h3>"
-                },
-                {
-                    "action": "validate",
-                    "extract_regex" : "<div class=\"vodplayinfo\">.*?</div>",
-                    "condition": true,
-                    "func":{
-                        "extract_regex":"<span.*?>|</span>|<br.*?/>|,",
-                        "replace_str":""
-                    }
-                },
-                {
-					"action": "replace",
-					"extract_regex":",",
-					"replace_str":"、"
+				},
+				{
+					"action": "validate",
+					"extract_regex": "<div class=\"vodplayinfo\">.*?</div>",
+					"condition": true,
+					"func": {
+						"extract_regex": "<span.*?>|</span>|<br.*?/>|,",
+						"replace_str": ""
+					}
 				},
 				{
 					"action": "replace",
-					"extract_regex":"<a.*?>|<br />",
-					"replace_str":""
+					"extract_regex": ",",
+					"replace_str": "、"
 				},
 				{
 					"action": "replace",
-					"extract_regex":"</a>&nbsp;",
-					"replace_str":"、"
-                },
-                {
-                    "action": "replace",
-                    "extract_regex": "<span></span>",
-                    "replace_str":"<span>-</span>"
-                },
-                {
-                    "action": "replace",
-                    "extract_regex": "<div class=\"vodplayinfo\"></div>",
-                    "replace_str":"<div class=\"vodplayinfo\">-</div>"
-                },
-				{
-					"action": "replace",
-					"extract_regex":"<h3>.*?</h3>",
-                    "replace_str":"~#~"
+					"extract_regex": "<a.*?>|<br />",
+					"replace_str": ""
 				},
 				{
 					"action": "replace",
-					"extract_regex":"<img class=\"lazy\" src=\"",
-					"replace_str":""
+					"extract_regex": "</a>&nbsp;",
+					"replace_str": "、"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<span></span>",
+					"replace_str": "<span>-</span>"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<div class=\"vodplayinfo\"></div>",
+					"replace_str": "<div class=\"vodplayinfo\">-</div>"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<h3>.*?</h3>",
+					"replace_str": "~#~"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<img class=\"lazy\" src=\"",
+					"replace_str": ""
 				},
 				{
 					"action": "replace",
 					"extract_regex": "\" alt=\".*?\" />",
-					"replace_str":","
-                },
-                {
-                    "action": "replace",
-                    "extract_regex": "<~#~/>|~#~/>",
-                    "replace_str":"~#~"
-                },
-                {
-                    "action": "replace",
-                    "extract_regex": "</>",
-                    "replace_str":"|"
-                },
-				{
-					"action": "replace",
-					"extract_regex":"<.*?>",
-                    "replace_str":","
+					"replace_str": ","
 				},
 				{
 					"action": "replace",
-					"extract_regex":",,",
-					"replace_str":","
+					"extract_regex": "<~#~/>|~#~/>",
+					"replace_str": "~#~"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "</>",
+					"replace_str": "|"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<.*?>",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",,",
+					"replace_str": ","
 				},
 				{
 					"action": "replace",
@@ -258,8 +284,8 @@
 				},
 				{
 					"action": "replace",
-					"extract_regex":"<~#~/>",
-					"replace_str":"~#~"
+					"extract_regex": "<~#~/>",
+					"replace_str": "~#~"
 				},
 				{
 					"action": "replace",
@@ -273,24 +299,54 @@
 				},
 				{
 					"action": "replace",
-					"extract_regex":"<",
-					"replace_str":""
-                },
-                {
-                    "action":"replace",
-                    "extract_regex": ",~#~~#~",
-                    "replace_str": ","
-                }
+					"extract_regex": "<",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",~#~~#~",
+					"replace_str": ","
+				}
 			],
-			"serialize_data":{
-				"serialize_type":"split",
+			"serialize_data": {
+				"serialize_type": "split",
 				"split_str": ",",
-				"check_fields_type":[
-					[0,"\\.(jpg|jpge|gif|bmp|png)", "source/image/cover/default.jpg", "insert"],
-					[0,"^(upload/|/upload/)", "source/images/cover/default.jpg", "replace"]
+				"check_fields_type": [
+					[
+						0,
+						"\\.(jpg|jpge|gif|bmp|png)",
+						"source/image/cover/default.jpg",
+						"insert"
+					],
+					[
+						0,
+						"^(upload/|/upload/)",
+						"source/images/cover/default.jpg",
+						"replace"
+					]
 				],
-				"fields": ["img", "name", "remark", "alias", "director", "performer", "c_type", "country", "language", "year","duration", "update_date","total_play_count","today_total_play_count","total_sorce_grade","total_sorce_count", "tag","description", "play_urls"]
+				"fields": [
+					"img",
+					"name",
+					"remark",
+					"alias",
+					"director",
+					"performer",
+					"c_type",
+					"country",
+					"language",
+					"year",
+					"duration",
+					"update_date",
+					"total_play_count",
+					"today_total_play_count",
+					"total_sorce_grade",
+					"total_sorce_count",
+					"tag",
+					"description",
+					"play_urls"
+				]
 			}
-        }
+		}
 	]
 }
