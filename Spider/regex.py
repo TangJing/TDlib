@@ -150,17 +150,14 @@ class Analysis(Event):
                                 json_file.close()
                                 self.__state = SPIDER_STATUS.SPIDER_SUCCESS
                         except Exception as e:
-                            self.__error(
-                                e, SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
+                            raise Exception(e)
                     else:
-                        self.__error(
-                            "can't found config file.path(%s)" % str(item['path']), SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
+                        raise Exception(
+                            "can't found config file. path(%s)" % str(item['path']))
             else:
-                self.__error('config path is null.',
-                             SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
+                raise Exception('config path is null.')
         else:
-            self.__error('rules config is null.',
-                         SPIDER_STATUS.SPIDER_CONFIG_IS_NOT_LOAD)
+            raise Exception('rules config is null.')
 
     def __httpControl(self, time_out=5):
         '''
