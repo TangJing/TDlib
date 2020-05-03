@@ -90,7 +90,7 @@
 			"spider_url": "/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*.html",
 			"define": [
 				{
-					"key": "topycategory",
+					"key": "topcategory",
 					"extract_regex": "&nbsp;<a.*?>.*?</a></dd>",
 					"func": [
 						{
@@ -104,6 +104,11 @@
 				{
 					"action": "filter",
 					"extract_regex": "<a href=.*?</span>.*?</span>.*?</span>"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<span class=\"xing_vb5\">",
+					"replace_str":"<span>{{topcategory}}</span><span class=\"xing_vb5\">"
 				},
 				{
 					"action": "replace",
@@ -186,6 +191,7 @@
 				"fields": [
 					"url",
 					"name",
+					"top_type",
 					"c_type",
 					"lastupdate"
 				]

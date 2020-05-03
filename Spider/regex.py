@@ -36,7 +36,7 @@ class Analysis(Event):
         self.__fingerprint = None  # 临时缓存内容hash值
         self.debug = False  # 调试模式开关
         # 定义私有变量
-        self.__define_var= dict() # 变量缓存
+        self.__define_var = dict()  # 变量缓存
         self.__config = dict()  # 爬取规则配置
         self.__configKey = ''  # 规则KEY
         self.__prefix_domain = None  # 前缀名称
@@ -95,7 +95,7 @@ class Analysis(Event):
 
     def __url_check(self):
         self.__state = SPIDER_STATUS.SPIDER_SUCCESS
-        self.__define_var= dict()
+        self.__define_var = dict()
         self.__data['type'] = None
         self.__data['data'] = None
         self.__data['html'] = ''
@@ -276,7 +276,7 @@ class Analysis(Event):
                         # 定义变量
                         if 'define' in item:
                             for define_config in item['define']:
-                                self.__define(config= define_config)
+                                self.__define(config=define_config)
 
                         # 找到规则进行内容截取
                         self.__interceptPage(rule_total)
@@ -443,14 +443,15 @@ class Analysis(Event):
                     if 'func' in m_config:
                         if ('extract_regex' in m_config['func']) and ('replace_str' in m_config['func']):
                             tmp_body = ''
-                            body= m_body.group()
+                            body = m_body.group()
                             tmp_body = re.sub(m_config['func']['extract_regex'],
-                                                   m_config['func']['replace_str'], body, count=0, flags=0)
+                                              m_config['func']['replace_str'], body, count=0, flags=0)
                             self.__response_html = re.sub(
                                 m_config['extract_regex'], tmp_body, self.__response_html, count=0, flags=0)
                             if 'debug' in m_config:
                                 if m_config['debug']:
-                                    self.on(event.onDebug, self, **{"event": 'actiondebug', "data": "-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(self.getCurrentUrl, m_config['extract_regex'], backups_response_html, self.__response_html)})
+                                    self.on(event.onDebug, self, **{"event": 'actiondebug', "data": "-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(
+                                        self.getCurrentUrl, m_config['extract_regex'], backups_response_html, self.__response_html)})
                         else:
                             self.__error("root.rules.{0}.actons.{1}.func extract_regex or replace_str, can't found key." % (
                                 rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
@@ -498,11 +499,11 @@ class Analysis(Event):
                     rule_index, action_index), SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
         backups_response_html = None
 
-    def __define(self,config):
+    def __define(self, config):
         '''定义变量
 
             config json:
-        
+
             "define": [
                     {
                         "key": "变量名称",
@@ -516,14 +517,16 @@ class Analysis(Event):
                     }
                 ]
         '''
-        m_config= config
+        m_config = config
         try:
-            m_body= re.search(m_config['extract_regex'],self.__response_html, re.I|re.M)
+            m_body = re.search(
+                m_config['extract_regex'], self.__response_html, re.I | re.M)
             if m_body:
-                value= m_body.group()
+                value = m_body.group()
                 for item in m_config['func']:
-                    value= re.sub(item['extract_regex'],item['replace_str'],value,count=0, flags=0)
-                self.__define_var[m_config['key']]= value
+                    value = re.sub(
+                        item['extract_regex'], item['replace_str'], value, count=0, flags=0)
+                self.__define_var[m_config['key']] = value
         except Exception as e:
             raise e
 
@@ -538,8 +541,15 @@ class Analysis(Event):
         backups_response_html = self.__response_html
         m_config = self.__config[self.__configKey]['rules'][rule_index]['actions'][action_index]
         if 'extract_regex' in m_config:
+            replace_str = m_config['replace_str']
+            for item in re.finditer(r"{{.*?}}", replace_str, re.I | re.M):
+                item = item.group().replace("{{", "")
+                item = item.replace("}}", "")
+                if item in self.__define_var:
+                    replace_str = replace_str.replace(
+                        r"{{"+item+"}}", self.__define_var[item])
             self.__response_html = re.sub(
-                m_config['extract_regex'], m_config['replace_str'], self.__response_html, count=0, flags=0)
+                m_config['extract_regex'], replace_str, self.__response_html, count=0, flags=0)
             if 'debug' in m_config:
                 if m_config['debug']:
                     self.on(event.onDebug, self, **{"event": 'actiondebug', "data": "-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(
