@@ -25,6 +25,7 @@ class STATUS(Enum):
     '''
         SPIDER错误
     '''
+
     SPIDER_SUCCESS= 20000
     # 配置文件未加载
     SPIDER_CONFIG_IS_NOT_LOAD= 20001
@@ -52,6 +53,8 @@ class STATUS(Enum):
     SPIDER_SERIALIZE_ERROR= 20012
     # 序列化数据校验失败
     SPIDER_SERIALIZE_DATA_VERIFY_FAIL= 20013
+    # 跳过爬取
+    SPIDER_EXCLUDE= 20014
 
     #CONFIG 状态
     CONFIG_SUCCESS= 30000

@@ -122,6 +122,12 @@ class Analysis(Event):
         self.__prefix_domain = self.__config[self.__configKey]['prefix_domain']
         if re.match(self.__prefix_domain, self.__currentUrl, re.M | re.I) == None:
             self.__currentUrl = self.__prefix_domain + self.__currentUrl
+        if 'exclude' in self.__config[self.__configKey]:
+            # 检查URL是否需要跳过
+            for item in self.__config[self.__configKey]['exclude']:
+                if not re.search(item,self.__currentUrl,re.I|re.M):
+                    self.__state= SPIDER_STATUS.SPIDER_EXCLUDE
+                    break
 
     def __exclude(self, url):
         '''

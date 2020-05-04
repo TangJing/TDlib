@@ -60,36 +60,32 @@ class spiderPools(pools):
     def __process(self):
         # 爬虫线程
         process_spider = self.pop()
-        m_state = True
-        while m_state:
-            m_url = self._cache.pop()
-            if m_url:
-                if m_url[0]:
-                    # 如果内容未更改则跳过；并认为后续翻页内容均为未更改内容,并同时跳过后续翻页爬取.
-                    if m_url[1]:
-                        if m_url[1] in self._exclude_url:
-                            continue
-                    try:
-                        self._debug= False
-                        process_spider.start(m_url[2], m_url[0])
-                    except Exception as e:
-                        # 爬取出错，抛出异常
+        if process_spider:
+            m_state = True
+            while m_state:
+                m_url = self._cache.pop()
+                if m_url:
+                    if m_url[0]:
+                        # 如果内容未更改则跳过；并认为后续翻页内容均为未更改内容,并同时跳过后续翻页爬取.
+                        if m_url[1]:
+                            if m_url[1] in self._exclude_url:
+                                continue
                         try:
-                            self._lock.acquire()
-                            self.on(event.onListen, process_spider, e)
+                            self._debug= False
+                            process_spider.start(m_url[2], m_url[0])
                         except Exception as e:
                             raise e
-                        finally:
-                            self._lock.release()
-                    if process_spider.getStatus == SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT:
-                        if m_url[1]:
-                            self._exclude_url[m_url[1]
-                                              ] = process_spider.getCurrentUrl
+                        if process_spider.getStatus == SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT:
+                            if m_url[1]:
+                                self._exclude_url[m_url[1]
+                                                ] = process_spider.getCurrentUrl
+                    else:
+                        m_state = False
                 else:
                     m_state = False
-            else:
-                m_state = False
-        self.push(process_spider)
+            self.push(process_spider)
+        else:
+            raise Exception('error')
 
     # 事件监听
     def onIndexComplete(self, *args, **kwargs):
