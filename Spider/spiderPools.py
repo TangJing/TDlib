@@ -7,6 +7,7 @@ from TDlib.Spider.models.status import STATUS as SPIDER_STATUS
 from TDlib.Spider.models.fingerprint import fingerprint
 from TDlib.Cache.pools import pools
 from TDlib.Spider.models.Cache_L1 import L1, event as L1_EVENT, L2
+from TDlib.Spider.models.BadRequestModel import BadRequest
 from threading import Thread
 
 import copy
@@ -168,6 +169,15 @@ class spiderPools(pools):
     def onError(self, *args, **kwargs):
         try:
             self._lock.acquire()
+            if len(args)>0:
+                if args[0].getStatus= SPIDER_STATUS.HTTP_GATEWAY_TIME_OUT or args[0].getStatus= SPIDER_STATUS.HTTP_REQUEST_TIME:
+                    # 如果访问超时缓存地址.
+                    m_badRequest= BadRequest()
+                    m_badRequest.Url= args[0].getCurrentUrl
+                    m_badRequest.Source= None
+                    m_badRequest.Key= args[0].getData['analysis_key']
+                    m_badRequest.UpdateTime= datetime.datetime.now()
+                    m_badRequest.toSave()
             return self.on(event.onListen, *args, **kwargs)
         except Exception as e:
             raise e
