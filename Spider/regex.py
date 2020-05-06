@@ -120,7 +120,8 @@ class Analysis(Event):
             msg = "-root.prefix_domain, can't found key."
             return self.__error(msg, SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
         self.__prefix_domain = self.__config[self.__configKey]['prefix_domain']
-        if re.match(self.__prefix_domain, self.__currentUrl, re.M | re.I) == None:
+        if not re.match(r'^http(s)://', self.__currentUrl, re.M| re.I):
+            #if re.match(self.__prefix_domain, self.__currentUrl, re.M | re.I) == None:
             self.__currentUrl = self.__prefix_domain + self.__currentUrl
         if 'exclude' in self.__config[self.__configKey]:
             # 检查URL是否需要跳过
@@ -450,10 +451,10 @@ class Analysis(Event):
                         if ('extract_regex' in m_config['func']) and ('replace_str' in m_config['func']):
                             tmp_body = ''
                             body = m_body.group()
-                            tmp_body = re.sub(m_config['func']['extract_regex'],
-                                              m_config['func']['replace_str'], body, count=0, flags=0)
-                            self.__response_html = re.sub(
-                                m_config['extract_regex'], tmp_body, self.__response_html, count=0, flags=0)
+                            tmp_body = re.sub(m_config['func']['extract_regex'],m_config['func']['replace_str'], body, count=0, flags=0)
+                            if 'template' in m_config['func']:
+                                tmp_body= re.sub(r"{{value}}",tmp_body,m_config['func']['template'],count=0, flags=0)
+                            self.__response_html = re.sub(m_config['extract_regex'], tmp_body, self.__response_html, count=0, flags=0)
                             if 'debug' in m_config:
                                 if m_config['debug']:
                                     self.on(event.onDebug, self, **{"event": 'actiondebug', "data": "-{0}, regular:{1}\r\n\t- befor:{2}\r\n\t- after:{3}".format(

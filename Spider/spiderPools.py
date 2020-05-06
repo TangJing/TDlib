@@ -170,7 +170,7 @@ class spiderPools(pools):
         try:
             self._lock.acquire()
             if len(args)>0:
-                if args[0].getStatus= SPIDER_STATUS.HTTP_GATEWAY_TIME_OUT or args[0].getStatus= SPIDER_STATUS.HTTP_REQUEST_TIME:
+                if args[0].getStatus== SPIDER_STATUS.HTTP_GATEWAY_TIME_OUT or args[0].getStatus== SPIDER_STATUS.HTTP_REQUEST_TIME:
                     # 如果访问超时缓存地址.
                     m_badRequest= BadRequest()
                     m_badRequest.Url= args[0].getCurrentUrl

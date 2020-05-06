@@ -4,9 +4,9 @@
 	"debug": false,
 	"reconnect": 5,
 	"source_index": 2,
-	"domain": "iokzy.com",
-	"entrance": "http://api.iokzy.com",
-	"prefix_domain": "http://api.iokzy.com",
+	"domain": "www.okzy.co",
+	"entrance": "https://www.okzy.co",
+	"prefix_domain": "https://www.okzy.co",
 	"access_delays": 0,
 	"exclude": [],
 	"page_url": {
@@ -17,7 +17,7 @@
 	"rules": [
 		{
 			"type": "index",
-			"url_checking": "http://api.iokzy.com",
+			"url_checking": "https://www.okzy.co",
 			"start_anchor": "<ul id=\"sddm\">",
 			"end_anchor": "<div class=\"container\">",
 			"page_filter": [
@@ -83,7 +83,7 @@
 		},
 		{
 			"type": "list",
-			"url_checking": "http://api.iokzy.com/\\?m=vod-type-id-[1-9]\\d*\\.html|http://api.iokzy.com/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*\\.html",
+			"url_checking": "https://www.okzy.co/\\?m=vod-type-id-[1-9]\\d*\\.html|https://www.okzy.co/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*\\.html",
 			"start_anchor": "<div class=\"xing_vb\">",
 			"end_anchor": "<!-- 底部截取标签-->",
 			"page_filter": [],
@@ -199,7 +199,7 @@
 		},
 		{
 			"type": "detail",
-			"url_checking": "http://api.iokzy.com/\\?m=vod-detail-id-[1-9]\\d*\\.html",
+			"url_checking": "https://www.okzy.co/\\?m=vod-detail-id-[1-9]\\d*\\.html",
 			"error_next": false,
 			"start_anchor": "<div class=\"warp\">",
 			"end_anchor": "<!-- 底部截取标签-->",
@@ -219,8 +219,9 @@
 					"extract_regex": "<div class=\"vodplayinfo\">.*?</div>",
 					"condition": true,
 					"func": {
-						"extract_regex": "<span.*?>|</span>|<br.*?/>|,",
-						"replace_str": ""
+						"extract_regex": "<.*?>|</.*?>|,",
+						"replace_str": "",
+						"template": "<div class=\"vodplayinfo\">{{value}}</div>"
 					}
 				},
 				{
