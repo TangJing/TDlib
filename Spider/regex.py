@@ -35,6 +35,7 @@ class Analysis(Event):
         self.__is_to_fingerprint = True  # 验证页面内容重复临时开关.
         self.__fingerprint = None  # 临时缓存内容hash值
         self.debug = False  # 调试模式开关
+        self.__interceptToken= dict() # 拦截开关
         # 定义私有变量
         self.__define_var = dict()  # 变量缓存
         self.__config = dict()  # 爬取规则配置
@@ -120,7 +121,7 @@ class Analysis(Event):
             msg = "-root.prefix_domain, can't found key."
             return self.__error(msg, SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
         self.__prefix_domain = self.__config[self.__configKey]['prefix_domain']
-        if not re.match(r'^http(s)://', self.__currentUrl, re.M| re.I):
+        if not re.match(r'^(http|https)://', self.__currentUrl, re.M| re.I):
             #if re.match(self.__prefix_domain, self.__currentUrl, re.M | re.I) == None:
             self.__currentUrl = self.__prefix_domain + self.__currentUrl
         if 'exclude' in self.__config[self.__configKey]:
@@ -183,10 +184,12 @@ class Analysis(Event):
             # if request object is ready
             if self.__currentUrl:
                 try:
+                    self.__validateInterceptUrl()
                     html, state = self.__http.getcontent(self.__currentUrl)
                     if state == 200:
                         self.__state = SPIDER_STATUS.HTTP_SUCCESS
                         self.__response_html = html
+                        self.__validateIntercept()
                     elif state == "CONNECT_IS_ERROR":
                         reconnect_total = 0
                         for i in range(0, self.__max_reconnect):
@@ -197,6 +200,7 @@ class Analysis(Event):
                             if state == 200:
                                 self.__state = SPIDER_STATUS.HTTP_SUCCESS
                                 self.__response_html = html
+                                self.__validateIntercept()
                                 break
                         if reconnect_total >= self.__max_reconnect:
                             self.__error(
@@ -210,6 +214,32 @@ class Analysis(Event):
                 self.__error('访问地址为空.', SPIDER_STATUS.REQUEST_URL_IS_NONE)
         else:
             self.__error('HTTP对象未定义.', SPIDER_STATUS.REQUEST_IS_NONE)
+
+    def __validateInterceptUrl(self):
+        if self.__configKey in self.__interceptToken:
+            if not re.search(r"&FbmNv=[a-z|0-9|A-Z]{16}|\?FbmNv=[a-z|0-9|A-Z]{16}", self.__currentUrl, re.I| re.M):
+                if re.search(r"\?", self.__currentUrl, re.I|re.M):
+                    self.__currentUrl=self.__currentUrl+"&FbmNv={0}".format(self.__interceptToken[self.__configKey])
+                else:
+                    self.__currentUrl=self.__currentUrl+"?FbmNv={0}".format(self.__interceptToken[self.__configKey])
+            else:
+                m_ret= re.search(r"[a-z|0-9|A-Z]{16}",self.__currentUrl,re.I|re.M)
+                if m_ret:
+                    m_ret= m_ret.group()
+                    if m_ret != self.__interceptToken[self.__configKey]:
+                        self.__currentUrl= re.sub(r'FbmNv=[a-z|0-9|A-Z]{16}',"FbmNv={0}".format(self.__interceptToken[self.__configKey]), self.__currentUrl, count=0, flags=0)
+
+    def __validateIntercept(self):
+        if re.search(r"<title>页面已拦截</title>", self.__response_html, re.I| re.M):
+            self.__state = SPIDER_STATUS.HTTP_BAD_REQUEST
+            m_token= re.search(r"var token = \"[a-z|0-9|A-Z]{16}\"", self.__response_html, re.I|re.M)
+            if m_token:
+                m_token=m_token.group()
+                m_token= re.search(r"[a-z|0-9|A-Z]{16}", m_token, re.I|re.M).group()
+                self.__interceptToken[self.__configKey]=m_token
+                self.__httpControl()
+            else:
+                pass
 
     def __generate_next_url(self):
         item = self.__config[self.__configKey]
@@ -273,8 +303,17 @@ class Analysis(Event):
             rule_total = 0
             for item in self.__config[self.__configKey]['rules']:
                 if "url_checking" in self.__config[self.__configKey]['rules'][rule_total]:
+                    m_completion="" # 如果地址被拦截则补全参数
+                    m_ret= re.search("&FbmNv=[a-z|0-9|A-Z]{16}|\\?FbmNv=[a-z|0-9|A-Z]{16}", self.__currentUrl,re.I|re.M)
+                    if m_ret:
+                        m_completion= m_ret.group()
+                        if re.search(r"^\?",m_completion,re.I|re.M):
+                            m_completion= "\\"+ m_completion
+                        m_validateUrl="("+self.__config[self.__configKey]['rules'][rule_total]['url_checking']+")"+m_completion
+                    else:
+                        m_validateUrl=self.__config[self.__configKey]['rules'][rule_total]['url_checking']
                     matching_rule = re.fullmatch(
-                        self.__config[self.__configKey]['rules'][rule_total]['url_checking'], self.__currentUrl, re.I | re.S)
+                        m_validateUrl, self.__currentUrl, re.I | re.S)
                     if not matching_rule:
                         # 查找下一个规则
                         rule_total += 1

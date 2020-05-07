@@ -47,9 +47,10 @@ class spiderPools(pools):
         return self._cache.getCache()
 
     def onPush(self, *args, **kwargs):
+        self._lock.acquire()
         if self.available_resources > 0:
             self.__startSpiderThread()
-
+        self._lock.release()
     def __startSpiderThread(self):
         thread_spider = Thread(target=self.__process)
         thread_spider.start()
