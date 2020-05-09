@@ -42,6 +42,7 @@ class Analysis(Event):
         self.__configKey = ''  # 规则KEY
         self.__prefix_domain = None  # 前缀名称
         self.__currentUrl = None  # 当前爬取地址
+        self.__baseCurrentUrl= None # 原始爬取地址
         self.__nextUrl = None  # 生成翻页地址
         self.__state = SPIDER_STATUS.SPIDER_SUCCESS  # 爬虫状态
         self.__response_html = None  # 爬取到的内容
@@ -64,7 +65,7 @@ class Analysis(Event):
 
     @property
     def getCurrentUrl(self):
-        return self.__currentUrl
+        return self.__baseCurrentUrl
 
     @property
     def getFingerprint(self):
@@ -78,6 +79,7 @@ class Analysis(Event):
         self.__currentUrl = url
         self.__url_check()
         if self.__state == SPIDER_STATUS.SPIDER_SUCCESS:
+            self.__baseCurrentUrl= self.__currentUrl
             self.__httpControl()
             if self.__state == SPIDER_STATUS.HTTP_SUCCESS:
                 # 进入规则路由
