@@ -131,15 +131,6 @@ class Analysis(Event):
                     self.__state= SPIDER_STATUS.SPIDER_EXCLUDE
                     break
 
-    def __exclude(self, url):
-        '''
-        判断是否排除爬取
-
-        - Parameters:
-            - url: 爬取的地址.
-        '''
-        pass
-
     def config(self, rulesConfig):
         '''
         加载配置文件
