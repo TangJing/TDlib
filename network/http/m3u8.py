@@ -3,7 +3,7 @@
 '''
 @File    :   m3u8.py
 @Time    :   2020/04/23 10:12:13
-@Author  :   Tang Jing 
+@Author  :   Tang Jing
 @Version :   1.0.0
 @Contact :   yeihizhi@163.com
 @License :   (C)Copyright 2020
@@ -23,19 +23,24 @@ from TDlib.Cache.pools import pools
 from TDlib.network.http.http_helper import m_http
 from TDlib.network.http.status.M3U8_STATUS import M3U8_STATUS
 # code start
-
-setting = {
+m3u8Cfg = {
     "cfg": {
-        'timeout': 5,
-        'reconnect': 3
-    },
+            'timeout': 5,
+            'reconnect': 3
+        },
     "tmpfolder": "tmp",
-    "download-poolsize": 20
+        "download-poolsize": 20
 }
 
 
 class m3u8:
-    def __init__(self):
+    def __init__(self, setting=None):
+        '''
+        params:
+            setting: meu8Cfg(dict)
+        '''
+        if not setting:
+            setting = m3u8Cfg
         try:
             self._http = m_http()
             # requests 连接失败重连次数
@@ -62,10 +67,10 @@ class m3u8:
             self._ts_tmp_stream = None  # TS缓存文件句柄
             # 建立TS临时文件
             self._ts_tmp_stream = open(os.path.join(
-                        self._tmp_folder, 'tmp.ts'), mode="wb")
-            
+                self._tmp_folder, 'tmp.ts'), mode="wb")
+
             # 建立播放临时文件
-            self._stream= self.__tmp_stream__()
+            self._stream = self.__tmp_stream__()
 
             # M3U8 TAGS
             self._prefix_url = None
@@ -102,10 +107,9 @@ class m3u8:
     def get(self, m3u8_path):
         # setattr(self, )
         if m3u8_path:
-            self._EXTINF__= []
-            self._EXT_X_STREAM_INF__= None
-            self._prefix_url = m3u8_path.rsplit('/', 1)[0]
-            ret, status= self.__download_m3u8_files(m3u8_path)
+            self._EXTINF__ = []
+            self._EXT_X_STREAM_INF__ = None
+            ret, status = self.__download_m3u8_files(m3u8_path)
             if status == M3U8_STATUS.GET_M3U8_PLAYLIST:
                 self.__download_m3u8_files(ret)
             return ret, status
@@ -114,11 +118,13 @@ class m3u8:
 
     def __download_m3u8_files(self, m3u8_path):
         m_index = 0
+        self._prefix_url = m3u8_path.rsplit('/', 1)[0]
         while True:
             response, status = self.__request__(m3u8_path)
             if status == 200:
                 self.__analysis__(response)
                 if self._EXT_X_STREAM_INF__:
+                    self._EXT_X_STREAM_INF__= None # 重置STREAM_INF属性
                     # 下载正式M3U8.
                     for m3_file in self._EXT_X_M3U8_FILE_LIST__:
                         if not re.match(r"^(http|https)://", m3_file, re.I | re.M):
@@ -126,6 +132,9 @@ class m3u8:
                             m3_file = self._prefix_url + "/" + m3_file
                             return m3_file, M3U8_STATUS.GET_M3U8_PLAYLIST
                 else:
+                    if self._EXT_X_KEY__:
+                        # 获取文件密钥
+                        pass
                     # 下载TS文件.(还需要解决主播多M3U8文件下载文件辨别问题)
                     # self._EXT_X_M3U8_PLAY_LIST_INDEX__ = 0
                     # self._ts_tmp_stream = None
@@ -163,7 +172,7 @@ class m3u8:
                 return e, -1
 
     def __download__(self):
-        if not self._download_thread_active_ >= setting['download-poolsize']:
+        if not self._download_thread_active_ >= self._download_pool_size:
             for i in range(0, self._download_pool_size):
                 Thread(target=self.__download_thread__).start()
             Thread(target=self.__create_merge_file).start()
@@ -195,6 +204,7 @@ class m3u8:
                     break
                 self._lock__.release()
                 if ts_struct:
+                    print('download:{0}'.format(ts_struct['url']))
                     file_bytes, status = m_http_control.download(
                         ts_struct['url'])
                     if status != 200:
@@ -219,13 +229,14 @@ class m3u8:
     def __create_merge_file(self):
         i = 0
         with open(os.path.join(
-                        self._tmp_folder, 'tmp.ts'), mode="rb") as fd:
+                self._tmp_folder, 'tmp.ts'), mode="rb") as fd:
             while True:
                 if i >= len(self._EXT_X_M3U8_PLAY_LIST__):
                     break
                 if self._EXT_X_M3U8_PLAY_LIST__[i]['offset']:
                     fd.seek(self._EXT_X_M3U8_PLAY_LIST__[i]['offset'][0])
-                    self._stream.write(fd.read(self._EXT_X_M3U8_PLAY_LIST__[i]['offset'][1]))
+                    self._stream.write(
+                        fd.read(self._EXT_X_M3U8_PLAY_LIST__[i]['offset'][1]))
                     self._stream.flush()
                     i += 1
                 else:
@@ -233,13 +244,14 @@ class m3u8:
                     self._event__.wait()
             fd.close()
         self._stream.close()
+        self._ts_tmp_stream.close()
 
     def __tmp_stream__(self):
         # 缓存文件对象
         try:
             if not os.path.exists(self._tmp_folder):
                 os.mkdir(self._tmp_folder)
-            #仅是改了扩展名，可以让播放器识别.并没有将视频编码更改为MP4
+            # 仅是改了扩展名，可以让播放器识别.并没有将视频编码更改为MP4
             return open(os.path.join(self._tmp_folder, 'tmp.mp4'), mode="wb")
         except:
             raise Exception("缓存文件初始化.")
@@ -262,12 +274,12 @@ class m3u8:
         m_result = re.match(r"^#.*", content)
         if m_result:
             m_data = content.split(":", 1)
-            m_key=  None
-            if len(m_data) ==2 :
+            m_key = None
+            if len(m_data) == 2:
                 m_key = m_data[0]
             else:
-                m_key= content
-            m_key+= "__"
+                m_key = content
+            m_key += "__"
             m_key = re.sub(r"#|-", "_", m_key, count=0, flags=0)
             m_key = m_key.replace(" ", "")
             if len(m_data) == 2:

@@ -129,7 +129,7 @@ class Analysis(Event):
         if 'exclude' in self.__config[self.__configKey]:
             # 检查URL是否需要跳过
             for item in self.__config[self.__configKey]['exclude']:
-                if not re.search(item,self.__currentUrl,re.I|re.M):
+                if re.search(item,self.__currentUrl,re.I|re.M):
                     self.__state= SPIDER_STATUS.SPIDER_EXCLUDE
                     break
 
@@ -223,6 +223,9 @@ class Analysis(Event):
                         self.__currentUrl= re.sub(r'FbmNv=[a-z|0-9|A-Z]{16}',"FbmNv={0}".format(self.__interceptToken[self.__configKey]), self.__currentUrl, count=0, flags=0)
 
     def __validateIntercept(self):
+        '''
+            解决广东电信不良信息ISP拦截跳转问题.
+        '''
         if re.search(r"<title>页面已拦截</title>", self.__response_html, re.I| re.M):
             self.__state = SPIDER_STATUS.HTTP_BAD_REQUEST
             m_token= re.search(r"var token = \"[a-z|0-9|A-Z]{16}\"", self.__response_html, re.I|re.M)
