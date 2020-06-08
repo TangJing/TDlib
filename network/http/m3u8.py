@@ -354,7 +354,7 @@ class m3u8:
                             file_bytes, status = m_http_control.download(
                                 ts_struct['url'])
                             i += 1
-                            if i > self._reconnect or status == 200:
+                            if status==200:#if i > self._reconnect or status == 200:
                                 break
                     self._EXT_X_M3U8_PLAY_LIST__[m_index]['state'] = True
                     self._lock__.acquire()
