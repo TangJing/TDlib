@@ -33,12 +33,12 @@ m3u8Cfg = {
     },
     "ismerge": False,  # 是否合并ts文件
     "tmpfolder": "tmp\\ts",  # 临时文件件
-    "download-poolsize": 20,  # 下载结程
+    "download-poolsize": 20,  # 下载线程
     "buffer-index": 5  # 下载多少文件后生成索引文件
 }
 
 
-class m3u8:
+class m3u8: # DEMO
     def __init__(self, setting=None):
         '''
         params:
@@ -62,6 +62,7 @@ class m3u8:
             self._lock__ = Lock()  # 线程锁
             self._event__ = ThreadEvent()  # 线程事件
             self._download_event__ = ThreadEvent()  # 下载线程同步
+            self._complete_event__ = ThreadEvent() # 下载完成通知事件
             self._event_create_m3u8_file__ = ThreadEvent()  # 生成m3u8索引文件事件
             self._is_merge__ = setting['ismerge']  # 是否合并TS文件
             self._download_thread_active_ = 0  # 下载线程活跃数,用于判断文件是否下载完成.
@@ -122,6 +123,9 @@ class m3u8:
         self._EXT_X_M3U8_PLAY_LIST_INDEX__ = download_start_offset
         self._m3u8_file_hash = None
         self._create_m3u8_index_file = False
+        self._download_event__.clear()
+        self._complete_event__.clear()
+        self._event__.clear()
         # 判断下载文件夹是否存在
         if not os.path.exists(self._tmp_folder):
             os.mkdir(self._tmp_folder)
@@ -177,6 +181,14 @@ class m3u8:
         '''
         self._event_create_m3u8_file__.wait()
         return 'index.m3u8'  # 返回索引文件文件夹以及地址.
+
+    def onComplete(self, func, *args, **wargs):
+        '''
+           完成调用. 
+        '''
+        self._complete_event__.wait()
+        func(*args,**wargs)
+        self._complete_event__.clear()
 
     def __download_m3u8_files(self, m3u8_path):
         '''
@@ -270,7 +282,7 @@ class m3u8:
                     if self._EXTINF__:
                         self.__download__()
                     else:
-                        print('g')
+                        print('EXTINF IS NONE.')
                     if not self._EXT_X_ENDLIST__:
                         self._download_event__.wait()
                         continue
@@ -279,6 +291,7 @@ class m3u8:
                 if not self._EXT_X_ENDLIST__:
                     continue
                 self._event_create_m3u8_file__.set()
+                self._complete_event__.set()
                 return "m3u8 download error.", M3U8_STATUS.ERROR
 
     def __request__(self, url):
@@ -299,6 +312,8 @@ class m3u8:
             except Exception as e:
                 return e, -1
         else:
+            self._complete_event__.set()
+            self._download_event__.set()
             return 'http is none.', -1
 
     def __download__(self):
@@ -462,6 +477,9 @@ class m3u8:
                 event_state = True
             if (not self._EXT_X_ENDLIST__) and event_state:
                 self._download_event__.set()
+            if self._EXT_X_ENDLIST__ and event_state:
+                self._download_event__.set()
+                self._complete_event__.set()
             self._lock__.release()
         else:
             print('httpContent none')
