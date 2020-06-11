@@ -1,6 +1,6 @@
 import threading
 import re
-from TDlib.network.socket import base,SOCKET_TYPE,SOCKET_EVENT, Event,trigger,call
+from TDhelper.network.socket import base,SOCKET_TYPE,SOCKET_EVENT, Event,trigger,call
 import socket
 
 class Client(base,threading.Thread):

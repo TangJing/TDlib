@@ -22,9 +22,9 @@ from threading import Lock
 from threading import Event as ThreadEvent
 from urllib.parse import urlparse
 from io import StringIO, BytesIO
-from TDlib.Cache.pools import pools
-from TDlib.network.http.http_helper import m_http
-from TDlib.network.http.status.M3U8_STATUS import M3U8_STATUS
+from TDhelper.Cache.pools import pools
+from TDhelper.network.http.http_helper import m_http
+from TDhelper.network.http.status.M3U8_STATUS import M3U8_STATUS
 # code start
 m3u8Cfg = {
     "cfg": {

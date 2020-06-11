@@ -1,13 +1,13 @@
 import datetime
 from enum import Enum
-from TDlib.Event.Event import Event
-from TDlib.Spider.regex import Analysis
-from TDlib.Spider.models.spider_event import event as Analysis_Event
-from TDlib.Spider.models.status import STATUS as SPIDER_STATUS
-from TDlib.Spider.models.fingerprint import fingerprint
-from TDlib.Cache.pools import pools
-from TDlib.Spider.models.Cache_L1 import L1, event as L1_EVENT, L2
-from TDlib.Spider.models.BadRequestModel import BadRequest
+from TDhelper.Event.Event import Event
+from TDhelper.Spider.regex import Analysis
+from TDhelper.Spider.models.spider_event import event as Analysis_Event
+from TDhelper.Spider.models.status import STATUS as SPIDER_STATUS
+from TDhelper.Spider.models.fingerprint import fingerprint
+from TDhelper.Cache.pools import pools
+from TDhelper.Spider.models.Cache_L1 import L1, event as L1_EVENT, L2
+from TDhelper.Spider.models.BadRequestModel import BadRequest
 from threading import Thread
 
 import copy

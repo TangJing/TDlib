@@ -18,10 +18,10 @@ import re
 import hashlib
 import threading
 
-from TDlib.network.http.http_helper import m_http
-from TDlib.Event.Event import Event
-from TDlib.Spider.models.spider_event import event
-from TDlib.Spider.models.status import STATUS as SPIDER_STATUS
+from TDhelper.network.http.http_helper import m_http
+from TDhelper.Event.Event import Event
+from TDhelper.Spider.models.spider_event import event
+from TDhelper.Spider.models.status import STATUS as SPIDER_STATUS
 
 # code start
 

@@ -1,6 +1,6 @@
 import socket
-from TDlib.network.socket.model.SOCKET_MODELS import SOCKET_TYPE,SOCKET_EVENT
-from TDlib.Event.Event import *
+from TDhelper.network.socket.model.SOCKET_MODELS import SOCKET_TYPE,SOCKET_EVENT
+from TDhelper.Event.Event import *
 
 class base(Event):
         def __init__(self):

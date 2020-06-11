@@ -62,5 +62,5 @@ class reflect:
         Print example document
     '''
     def help(self):
-        print("\r\nExample\r\n\tsetp1:import TDlib.reflect.reflect\r\n\tsetp2:reflect(namespace).Instance(classname).Call(methodname,*args or **kw)")
+        print("\r\nExample\r\n\tsetp1:import TDhelper.reflect.reflect\r\n\tsetp2:reflect(namespace).Instance(classname).Call(methodname,*args or **kw)")
         

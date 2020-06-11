@@ -1,7 +1,7 @@
 from enum import Enum
 import functools
 import threading
-import TDlib.bin.globalvar
+import TDhelper.bin.globalvar
 
 class Event:
     '''
@@ -10,7 +10,7 @@ class Event:
     def __init__(self):
         self._state=True
         self._currentEvent= None
-        if TDlib.bin.globalvar.getGlobalVariable("EventList")==None: #Check eventList object is define
+        if TDhelper.bin.globalvar.getGlobalVariable("EventList")==None: #Check eventList object is define
             self._state=False
 
     def _keyconvert(self,key):
@@ -26,13 +26,13 @@ class Event:
         if event key haven't set return True,else it return False
     '''
     def _checkKeyNotInEventList(self,key):
-        return self._keyconvert(key) not in TDlib.bin.globalvar.getGlobalVariable("EventList")
+        return self._keyconvert(key) not in TDhelper.bin.globalvar.getGlobalVariable("EventList")
 
     def _getEventListObject(self,key):
-        return TDlib.bin.globalvar.getGlobalVariable("EventList")[self._keyconvert(key)]
+        return TDhelper.bin.globalvar.getGlobalVariable("EventList")[self._keyconvert(key)]
 
     def getEventList(self):
-        return TDlib.bin.globalvar.getGlobalVariable("EventList")
+        return TDhelper.bin.globalvar.getGlobalVariable("EventList")
 
     '''
         Register an event
@@ -47,7 +47,7 @@ class Event:
     def registerEvent(self,key,func,sync=True):
         if self._state:
             if self._checkKeyNotInEventList(self._keyconvert(key)):
-                TDlib.bin.globalvar.getGlobalVariable("EventList")[self._keyconvert(key)]={"func":func,"sync":sync}
+                TDhelper.bin.globalvar.getGlobalVariable("EventList")[self._keyconvert(key)]={"func":func,"sync":sync}
 
 
     '''
@@ -56,7 +56,7 @@ class Event:
     def delEvent(self,key):
         if self._state:
             if not self._checkKeyNotInEventList(self._keyconvert(key)):
-                del TDlib.bin.globalvar.getGlobalVariable("EventList")[self._keyconvert(key)]
+                del TDhelper.bin.globalvar.getGlobalVariable("EventList")[self._keyconvert(key)]
 
     '''
         Callback
@@ -65,7 +65,7 @@ class Event:
         try:
             if key:
                 if self._state:
-                    if self._keyconvert(key) in TDlib.bin.globalvar.getGlobalVariable("EventList"):
+                    if self._keyconvert(key) in TDhelper.bin.globalvar.getGlobalVariable("EventList"):
                         self._currentEvent= key
                         if self._getEventListObject(key)["sync"]:
                             return self._getEventListObject(key)["func"](*args,**kw)
@@ -87,9 +87,9 @@ def call(key,*args,**kw):
     try:
         key=keyconvert(key)
         if len(args)>0:
-            if key in TDlib.bin.globalvar.getGlobalVariable("EventList"):
-                if TDlib.bin.globalvar.getGlobalVariable("EventList")[key]["sync"]:
-                    return TDlib.bin.globalvar.getGlobalVariable("EventList")[key]["func"](*args,**kw)
+            if key in TDhelper.bin.globalvar.getGlobalVariable("EventList"):
+                if TDhelper.bin.globalvar.getGlobalVariable("EventList")[key]["sync"]:
+                    return TDhelper.bin.globalvar.getGlobalVariable("EventList")[key]["func"](*args,**kw)
                 else:
                     pass#threading.Thread(target=bin.globalvar.getGlobalVariable("EventList")[key]["func"],args=[*args,**kw,]).start()
     except Exception as e:

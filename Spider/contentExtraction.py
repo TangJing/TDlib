@@ -244,7 +244,7 @@ class lineblock:
 test fun\r\n
 '''
 def example:
-    from TDlib.generic.http_helper import m_http
+    from TDhelper.generic.http_helper import m_http
     g=m_http()
     b=lineblock(5,0.2,50)
     content,statucode=g.getcontent("https://3w.huanqiu.com/a/bdb047/9CaKrnKq0iw?agt=8")

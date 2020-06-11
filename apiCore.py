@@ -2,8 +2,8 @@ import urllib.request
 import io
 import os
 import json
-from TDlib.bin.globalvar import *
-from TDlib.network.http.REST_HTTP import GET, POST
+from TDhelper.bin.globalvar import *
+from TDhelper.network.http.REST_HTTP import GET, POST
 
 
 class apiCore():

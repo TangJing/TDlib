@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum
 
-from TDlib.Spider.models.Cache_L2_Model import objectId
+from TDhelper.Spider.models.Cache_L2_Model import objectId
 
 class RecordStatus(Enum):
     '''

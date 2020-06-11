@@ -1,5 +1,5 @@
-from TDlib.Msg.Config import *
-from TDlib.apiCore import *
+from TDhelper.Msg.Config import *
+from TDhelper.apiCore import *
 import time
 import abc
 import six

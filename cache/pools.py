@@ -1,7 +1,7 @@
 import queue
 import copy
 from multiprocessing import Process,Lock
-from TDlib.Event.Event import Event
+from TDhelper.Event.Event import Event
 class pools(Event):
     def __init__(self, maxSize=100):
         '''

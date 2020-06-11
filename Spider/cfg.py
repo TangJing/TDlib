@@ -1,4 +1,4 @@
-from TDlib.db.mongodb.setting import db_cfg
+from TDhelper.db.mongodb.setting import db_cfg
 
 setting = {
 }

@@ -1,6 +1,6 @@
 import threading
-from TDlib.network.socket import base,SOCKET_TYPE,SOCKET_EVENT, Event,trigger,call
-from TDlib.network.socket.cache.queue import Q
+from TDhelper.network.socket import base,SOCKET_TYPE,SOCKET_EVENT, Event,trigger,call
+from TDhelper.network.socket.cache.queue import Q
 
 class Server(base,threading.Thread):
     def __init__(self, ip,port, listenCount=100,buffSize=1024):

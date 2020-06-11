@@ -4,8 +4,8 @@
 import bson
 import copy
 from bson.codec_options import CodecOptions
-from TDlib.db.mongodb.dbhelper import dbhelper
-from TDlib.db.mongodb.setting import db_cfg
+from TDhelper.db.mongodb.dbhelper import dbhelper
+from TDhelper.db.mongodb.setting import db_cfg
 '''
 class\r\n
     objectId

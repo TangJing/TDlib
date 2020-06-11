@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from TDlib.db.mongodb.base import mongodbclient
-from TDlib.db.mongodb.setting import db_cfg
+from TDhelper.db.mongodb.base import mongodbclient
+from TDhelper.db.mongodb.setting import db_cfg
 
 class dbhelper(mongodbclient):
     def __init__(self):

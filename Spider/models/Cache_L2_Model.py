@@ -4,9 +4,9 @@
 import bson
 import copy
 from bson.codec_options import CodecOptions
-from TDlib.db.mongodb.dbhelper import dbhelper, db_cfg
+from TDhelper.db.mongodb.dbhelper import dbhelper, db_cfg
 
-from TDlib.Spider.cfg import setting
+from TDhelper.Spider.cfg import setting
 
 '''
 class\r\n

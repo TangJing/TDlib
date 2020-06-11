@@ -1,1 +1,1 @@
-from TDlib.structs.dir import linked_list, Directory
+from TDhelper.structs.dir import linked_list, Directory

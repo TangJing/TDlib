@@ -7,7 +7,7 @@ __lastupdatetime__ = "2017/09/20"
 import requests
 '''
 class
-    TDlib.generic.m_http
+    TDhelper.generic.m_http
 description
     http帮助类
 '''

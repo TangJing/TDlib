@@ -3,8 +3,8 @@ import datetime
 from enum import Enum
 from threading import Condition
 from queue import Queue
-from TDlib.Event.Event import Event
-from TDlib.Spider.models.Cache_L2 import L2, RecordStatus
+from TDhelper.Event.Event import Event
+from TDhelper.Spider.models.Cache_L2 import L2, RecordStatus
 
 thread_condition = Condition()
 

@@ -1,5 +1,5 @@
 from Msg.InterfaceMsg import *
-from TDlib.apiCore import *
+from TDhelper.apiCore import *
 
 class SMS(Msg):
     '''手机短信
