@@ -5,6 +5,7 @@ __autho__ = "Tony.Don"
 __lastupdatetime__ = "2017/09/20"
 
 import requests
+from requests import exceptions
 '''
 class
     TDhelper.generic.m_http
@@ -36,8 +37,22 @@ class m_http:
                 if self.res:
                     return self.res.text, self.res.status_code
                 return p_url, "REQUESTS_OBJECT_IS_NULL"
-            except Exception as e:
+            except exceptions.HTTPError as e:
                 return e, "CONNECT_IS_ERROR"
+            except exceptions.Timeout as e:
+                return e,"TIME_OUT"
+            except exceptions.ConnectTimeout as e:
+                return e, 'CONNECT_TIME_TIMEOUT'
+            except exceptions.ProxyError as e:
+                return e,'PROXY_ERROR'
+            except exceptions.SSLError as e:
+                return e, 'SSL_ERROR'
+            except exceptions.URLRequired as e:
+                return e, 'URL_REQUIRED'
+            except exceptions.BaseHTTPError as e:
+                return e, 'BASE_HTTP_ERROR'
+            except Exception as e:
+                return e,"ERROR"
 
     def download(self,p_url, p_timeout= 5):
         if self.context:
