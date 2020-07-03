@@ -111,6 +111,7 @@ class m3u8:
             重置变量
         '''
         self._ts_save_folder = None
+        self._EXT_X_KEY__ = None
         self._download_event__.clear()
         self._complete_event__.clear()
         self._event_create_m3u8_file__.clear()
@@ -185,13 +186,31 @@ class m3u8:
         self._complete_event__.set()
         self._download_event__.set()
 
+    def seek(self, time):
+        ''''
+        寻道时间定位
+        '''
+        total_time = 0
+        index = 0
+        for item in self._EXT_X_M3U8_PLAY_LIST__:
+            total_time += float(item['duration'])
+            if total_time >= time:
+                self._EXT_X_M3U8_PLAY_LIST_INDEX__ = index
+                break
+            index += 1
+
     def __checkfolder__(self, folder):
         # 检查临时文件夹路径是否完整
-        if not re.search(r':\\', folder, re.I | re.M):
-            folder = os.path.join(os.getcwd(), folder)
-        # 如果文件夹不存在则建立文件夹
-        if not os.path.exists(folder):
-            os.mkdir(folder)
+        self._lock__.acquire()
+        try:
+            if not re.search(r':\\', folder, re.I | re.M):
+                folder = os.path.join(os.getcwd(), folder)
+            # 如果文件夹不存在则建立文件夹
+            if not os.path.exists(folder):
+                os.mkdir(folder)
+        except OSError as e:
+            raise e
+        self._lock__.release()
         return folder
 
     def __getM3U8file__(self, uri: str):
