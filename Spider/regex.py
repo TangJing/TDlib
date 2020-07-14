@@ -17,6 +17,7 @@ import os
 import re
 import hashlib
 import threading
+import time
 
 from TDhelper.network.http.http_helper import m_http
 from TDhelper.Event.Event import Event
@@ -37,6 +38,7 @@ class Analysis(Event):
         self.debug = False  # 调试模式开关
         self.__interceptToken= dict() # 拦截开关
         # 定义私有变量
+        self.__access_delays= 0 #控制爬取频率 默认0秒
         self.__define_var = dict()  # 变量缓存
         self.__config = dict()  # 爬取规则配置
         self.__configKey = ''  # 规则KEY
@@ -94,7 +96,12 @@ class Analysis(Event):
                     self.debug = self.__config[self.__configKey]['debug']
                 if 'reconnect' in self.__config[self.__configKey]:
                     self.__max_reconnect = self.__config[self.__configKey]['reconnect']
+                if 'access_delays' in self.__config[self.__configKey]:
+                    self.__access_delays = self.__config[self.__configKey]['access_delays']
                 self.__route()
+            if self.__access_delays>0:
+                # 控制访问频率延时.
+                time.sleep(self.__access_delays)
 
     def __url_check(self):
         self.__state = SPIDER_STATUS.SPIDER_SUCCESS

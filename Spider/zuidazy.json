@@ -1,0 +1,459 @@
+{
+	"name": "最大资源",
+	"key": "ZUIDAZY",
+	"debug": false,
+	"reconnect": 5,
+	"source_index": 3,
+	"domain": "zuidazy4.com",
+	"entrance": "http://zuidazy4.com",
+	"prefix_domain": "http://zuidazy4.com",
+	"access_delays": 0,
+	"exclude": ["http://zuidazy4.com/\\?m=vod-type-id-22.html","http://zuidazy4.com/\\?m=vod-type-id-34.html"],
+	"page_url": {
+		"verification_page_url": "\\?m=vod-type-id-[1-9]\\d*\\.html|\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*\\.html",
+		"page_param_index": 2,
+		"template": "?m=vod-type-id-{0[0]}-pg-{0[1]}.html"
+	},
+	"rules": [
+		{
+			"type": "index",
+			"url_checking": "http://zuidazy4.com",
+			"start_anchor": "<ul id=\"sddm\">",
+			"end_anchor": "<div class=\"container\">",
+			"page_filter": [
+				[
+					"regular",
+					"replace_str"
+				]
+			],
+			"spider_url": "",
+			"actions": [
+				{
+					"action": "filter",
+					"extract_regex": "<a href=\".*?\" onmouseover=\"mopen\\('.*?'\\)\" onmouseout=\"mclosetime\\(\\)\">.*?</a>"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "片",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<a href=\"/\">首页</a>",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<a href=\"",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "\".*?>",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": "</a>",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",(\r|\n|\r\n)",
+					"replace_str": ","
+				},
+				{
+					"action": "inserhtml",
+					"html": "#end"
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",#end",
+					"replace_str": ""
+				}
+			],
+			"serialize_data": {
+				"serialize_type": "split",
+				"split_str": ",",
+				"fields": [
+					"url",
+					"type"
+				]
+			}
+		},
+		{
+			"type": "list",
+			"url_checking": "http://zuidazy4.com/\\?m=vod-type-id-[1-9]\\d*\\.html|http://zuidazy4.com/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*\\.html",
+			"start_anchor": "<div class=\"xing_vb\">",
+			"end_anchor": "<!-- 底部截取标签-->",
+			"page_filter": [],
+			"spider_url": "/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*.html",
+			"define": [
+				{
+					"key": "topcategory",
+					"extract_regex": "&nbsp;<a.*?>.*?</a></dd>",
+					"func": [
+						{
+							"extract_regex": "<.*?>|</.*?>|&nbsp;|片",
+							"replace_str":""
+						}
+					]
+				}
+			],
+			"actions": [
+				{
+					"action": "filter",
+					"extract_regex": "<a href=.*?</span>.*?</span>.*?</span>"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<span class=\"xing_vb5\">",
+					"replace_str":"<span>{{topcategory}}</span><span class=\"xing_vb5\">"
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<a href=\"",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "\" target=\"_blank\">",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": "(<|</).*?>",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": " ",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",,,,|,,,|,,",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",(\r|\n|\r\n|\t)",
+					"replace_str": ","
+				},
+				{
+					"action": "inserhtml",
+					"html": "#head",
+					"pos": "head"
+				},
+				{
+					"action": "inserhtml",
+					"html": "#end"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "#head,|#head",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",#end|#end",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "BD|HD|更新(.*?)集|完结",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "更新至\\d*?,",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": " ",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "片,",
+					"replace_str": ","
+				},
+				{
+					"action":"replace",
+					"extract_regex":"香港剧",
+					"replace_str":"港剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"台湾剧",
+					"replace_str":"台剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"日本剧",
+					"replace_str":"日剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"韩国剧",
+					"replace_str":"韩剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"欧美剧",
+					"replace_str":"美剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"泰国剧",
+					"replace_str":"泰剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"内地综艺",
+					"replace_str":"大陆综艺"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"日韩动漫",
+					"replace_str":"日本动漫"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"动漫电影",
+					"replace_str":"动画"
+				}
+			],
+			"serialize_data": {
+				"serialize_type": "split",
+				"split_str": ",",
+				"fields": [
+					"url",
+					"name",
+					"top_type",
+					"c_type",
+					"lastupdate"
+				]
+			}
+		},
+		{
+			"type": "detail",
+			"url_checking": "http://zuidazy4.com/\\?m=vod-detail-id-[1-9]\\d*\\.html",
+			"error_next": false,
+			"start_anchor": "<div class=\"warp\">",
+			"end_anchor": "<!-- 底部截取标签-->",
+			"page_filter": [],
+			"actions": [
+				{
+					"action":"replace",
+					"extract_regex": "<li class=\"sm\">总播放量：</li>",
+					"replace_str": "<li class=\"sm\">总播放量：<span>0</span></li>"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<!--.*?-->",
+					"replace_str": ""
+				},
+				{
+					"action": "filter",
+					"extract_regex": "<h2>.*</h2>|<span>.*</span>|<img class=\"lazy\" src=\".*\" alt=\".*\" />|<div class=\"vodplayinfo\">.*</div>|/>.*?\\.(m3u8|mp4)<|<h3>.*?</h3>"
+				},
+				{
+					"action": "validate",
+					"extract_regex": "<div class=\"vodplayinfo\">.*?</div>",
+					"condition": true,
+					"func": {
+						"extract_regex": "<.*?>|</.*?>|,",
+						"replace_str": "",
+						"template": "<div class=\"vodplayinfo\">{{value}}</div>"
+					}
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",",
+					"replace_str": "、"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<a.*?>|<br />",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "</a>&nbsp;",
+					"replace_str": "、"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<span></span>",
+					"replace_str": "<span>-</span>"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<div class=\"vodplayinfo\"></div>",
+					"replace_str": "<div class=\"vodplayinfo\">-</div>"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<h3>.*?</h3>",
+					"replace_str": "~#~"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<img class=\"lazy\" src=\"",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "\" alt=\".*?\" />",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<~#~/>|~#~/>",
+					"replace_str": "~#~"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "</>",
+					"replace_str": "|"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<.*?>",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",,",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": "\\r|\\n|\\r\\n",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<~#~/>",
+					"replace_str": "~#~"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "~#~~#~/>",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",,",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": "<",
+					"replace_str": ""
+				},
+				{
+					"action": "replace",
+					"extract_regex": ",~#~~#~|,~#~",
+					"replace_str": ","
+				},
+				{
+					"action": "replace",
+					"extract_regex": "~#~~#~",
+					"replace_str": "~#~"
+				},
+				{
+					"action": "replace",
+					"extract_regex": "片,",
+					"replace_str": ","
+				},
+				{
+					"action":"replace",
+					"extract_regex":"香港剧",
+					"replace_str":"港剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"台湾剧",
+					"replace_str":"台剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"日本剧",
+					"replace_str":"日剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"韩国剧",
+					"replace_str":"韩剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"欧美剧",
+					"replace_str":"美剧"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"内地综艺",
+					"replace_str":"大陆综艺"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"日韩动漫",
+					"replace_str":"日本动漫"
+				},
+				{
+					"action":"replace",
+					"extract_regex":"动漫电影",
+					"replace_str":"动画"
+				}
+			],
+			"serialize_data": {
+				"serialize_type": "split",
+				"split_str": ",",
+				"check_fields_type": [
+					[
+						0,
+						"\\.(jpg|jpge|gif|bmp|png)",
+						"source/image/cover/default.jpg",
+						"insert"
+					],
+					[
+						0,
+						"^(upload/|/upload/)",
+						"source/images/cover/default.jpg",
+						"replace"
+					]
+				],
+				"fields": [
+					"img",
+					"name",
+					"remark",
+					"alias",
+					"director",
+					"performer",
+					"c_type",
+					"country",
+					"language",
+					"year",
+					"duration",
+					"update_date",
+					"total_play_count",
+					"today_total_play_count",
+					"total_sorce_grade",
+					"total_sorce_count",
+					"tag",
+					"description",
+					"play_urls"
+				]
+			}
+		}
+	]
+}

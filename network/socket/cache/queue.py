@@ -1,12 +1,11 @@
 import queue
-from multiprocessing import Process,Lock
-
+from threading import Lock
 class Q:
     def __init__(self, maxSize=100):
-        self._list=queue.Queue(maxSize)
-        self._lock=Lock()
+        self._list = queue.Queue(maxSize)
+        self._lock = Lock()
 
-    def push(self,value):
+    def push(self, value):
         self._lock.acquire()
         if not self._list.full():
             self._list.put(value)
@@ -20,4 +19,3 @@ class Q:
 
     def getQSize(self):
         return self._list.qsize()
-        

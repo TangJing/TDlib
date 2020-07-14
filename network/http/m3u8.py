@@ -130,42 +130,47 @@ class m3u8:
             self._m3u8_file_hash = None
 
     def Get(self, m3u8_url, ts_save_path: str = None, download_start_offset: int = 0):
-        self._EXT_X_M3U8_PLAY_LIST_INDEX__ = download_start_offset
-        m_count = 0
-        while True:
-            if not self._state:
-                self._event_create_m3u8_file__.set()
-                self._download_event__.set()
-                self._complete_event__.set()
-                break
-            self.__resetVar__()
-            if ts_save_path:
-                self._ts_save_folder = ts_save_path
-            else:
-                return 'ts save folder is none.', M3U8_STATUS.ERROR
-            ret, status = self.__getM3U8file__(m3u8_url)
-            if status == M3U8_STATUS.WAIT:
-                time.sleep(1)
-            elif status == M3U8_STATUS.SUCCESS:
-                if self._play_mode__ == 'live':
-                    self._ts_save_folder = 'live'
-                    if m_count == 0:
-                        m_count += 1
-                        if os.path.exists(os.path.join(self._save_folder, self._ts_save_folder)):
-                            for item in os.listdir(os.path.join(self._save_folder, self._ts_save_folder)):
-                                os.remove(os.path.join(self._save_folder, *(self._ts_save_folder,item))) #直播类，删除已下载TS文件.
-                self.__get_key__()  # 下载KEY文件.模块内有判断是否需要下载.
-                ret, status = self.__download_ts__()
-                if self._play_mode__ == 'live':
-                    continue
+        try:
+            self._EXT_X_M3U8_PLAY_LIST_INDEX__ = download_start_offset
+            m_count = 0
+            while True:
+                if not self._state:
+                    self._event_create_m3u8_file__.set()
+                    self._download_event__.set()
+                    self._complete_event__.set()
+                    break
+                self.__resetVar__()
+                if ts_save_path:
+                    self._ts_save_folder = ts_save_path
                 else:
-                    if status == M3U8_STATUS.SUCCESS:
-                        return 'SUCCESS', M3U8_STATUS.SUCCESS
-                    return ret, status
-            elif status == M3U8_STATUS.ERROR:
-                return ret, M3U8_STATUS.ERROR
-            else:
-                return 'Unknow error.', M3U8_STATUS.ERROR
+                    return 'ts save folder is none.', M3U8_STATUS.ERROR
+                ret, status = self.__getM3U8file__(m3u8_url)
+                if status == M3U8_STATUS.WAIT:
+                    time.sleep(1)
+                elif status == M3U8_STATUS.SUCCESS:
+                    if self._play_mode__ == 'live':
+                        self._ts_save_folder = 'live'
+                        if m_count == 0:
+                            m_count += 1
+                            if os.path.exists(os.path.join(self._save_folder, self._ts_save_folder)):
+                                for item in os.listdir(os.path.join(self._save_folder, self._ts_save_folder)):
+                                    os.remove(os.path.join(self._save_folder, *(self._ts_save_folder,item))) #直播类，删除已下载TS文件.
+                    self.__get_key__()  # 下载KEY文件.模块内有判断是否需要下载.
+                    ret, status = self.__download_ts__()
+                    if self._play_mode__ == 'live':
+                        continue
+                    else:
+                        if status == M3U8_STATUS.SUCCESS:
+                            return 'SUCCESS', M3U8_STATUS.SUCCESS
+                        return ret, status
+                elif status == M3U8_STATUS.ERROR:
+                    return ret, M3U8_STATUS.ERROR
+                else:
+                    return 'Unknow error.', M3U8_STATUS.ERROR
+        finally:
+            self._event_create_m3u8_file__.set()
+            self._complete_event__.set()
+            self._download_event__.set()
 
     def getComplate(self, func):
         self._complete_event__.wait()

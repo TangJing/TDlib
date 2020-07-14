@@ -48,7 +48,7 @@ class Client(base,threading.Thread):
         except Exception as e:
             self.on(SOCKET_EVENT.onError,e)
         finally:
-            self.closeClient()
+            pass #self.closeClient()
 
     def setRuning(self):
         if self.__runing.is_set():
@@ -58,6 +58,6 @@ class Client(base,threading.Thread):
         try:
             self.__state=False
             self.setRuning()
-            self.close()
+            super(Client,self).close()
         except Exception as e:
             self.on(SOCKET_EVENT.onError,e)
