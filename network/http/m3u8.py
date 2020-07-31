@@ -17,6 +17,7 @@ import io
 import shutil
 import time
 # from Crypto.Cipher import AES 解密后CKPLAYER播放有问题.
+from decimal import *
 from threading import Thread
 from threading import Lock
 from threading import Event as ThreadEvent
@@ -328,8 +329,12 @@ class m3u8:
                             if i > self._reconnect or status == 200:  # if status==200:
                                 break
                     else:
-                        print('\rdownload:{1}({0}%)'.format(self._EXT_X_M3U8_PLAY_LIST_INDEX__/len(
-                            self._EXT_X_M3U8_PLAY_LIST__)*100, self._current_m3u8_file), end='')
+                        total_download_rate=self._EXT_X_M3U8_PLAY_LIST_INDEX__/len(
+                            self._EXT_X_M3U8_PLAY_LIST__)*100
+                        if total_download_rate>100.00:
+                            total_download_rate= 100.00
+                        total_download_rate=Decimal(str(total_download_rate)).quantize(Decimal('0.00'))
+                        print('\rdownload:{1}({0}%)'.format(total_download_rate, self._current_m3u8_file), end='')
                         # 建立播放索引.
                         if ts_struct['index'] >= self._m3u8_buffer_index:
                             self.__create_m3u8_play_file__()
@@ -479,14 +484,16 @@ class m3u8:
                                         content, state = self.__request__(
                                             key_url)
                                         download_count += 1
-                                        if download_count > self._reconnect or state == 200:
+                                        if download_count > self._reconnect:
                                             break
                                         if state == 200:
                                             self._m3u8_key['key'] = content
+                                            self.__checkfolder__(os.path.join(self._save_folder,self._ts_save_folder))
                                             with open(os.path.join(self._save_folder, *(self._ts_save_folder, 'key.key')), mode='wb') as keyStream:
                                                 keyStream.write(
                                                     bytes(content, encoding='utf-8'))
                                                 keyStream.flush()
+                                            break
                             elif line[0].lower() == 'iv':
                                 self._m3u8_key['iv'] = line[1]
                     else:
@@ -498,7 +505,11 @@ class m3u8:
         '''
             拼接资源URI
         '''
-        ret = self._prefix_url
+        ret= ''
+        if uri[0]=='/':
+            ret= self._prefix_url.rsplit('/',1)[0]
+        else:
+            ret = self._prefix_url
         for item in uri.split('/'):
             if not re.search(item, self._prefix_url, re.M | re.I):
                 ret += '/'+item

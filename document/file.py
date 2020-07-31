@@ -1,15 +1,21 @@
 import os
 
 class stream:
-
-    def __init__(self):
-        pass
-
-    def openStream(streamPath, *args, **kwargs):
+    '''
+    未完成
+    '''
+    def __init__(self, streamPath):
+        self._handle= None
         if self._exsiteFolder(streamPath):
-            os.open(streamPath, )
+            self._handle= os.open(streamPath)
 
-    def _exsiteFolder(streamPath):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self._handle.close()
+
+    def _exsiteFolder(self,streamPath):
         if not os.path.exists(streamPath.rsplit(r'\\',1)[0]):
             try:
                 os.mkdir(streamPath)

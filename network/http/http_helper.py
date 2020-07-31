@@ -20,7 +20,7 @@ class m_http:
         
         
     #url:wetsite url address
-    def getcontent(self,p_url, p_timeout= 5):
+    def getcontent(self,p_url, p_timeout= 5, headers:dict= None):
         '''
         Featuren\r\n
             getcontent(self,url)\r\n
@@ -33,7 +33,10 @@ class m_http:
         '''
         if self.context:
             try:
-                self.res=self.context.get(url= p_url, timeout= p_timeout)
+                if not headers:
+                    self.res=self.context.get(url= p_url, timeout= p_timeout)
+                else:
+                    self.res= self.context.get(url= p_url, timeout= p_timeout, headers= headers)
                 if self.res:
                     return self.res.text, self.res.status_code
                 return p_url, "REQUESTS_OBJECT_IS_NULL"
@@ -54,10 +57,13 @@ class m_http:
             except Exception as e:
                 return e,"ERROR"
 
-    def download(self,p_url, p_timeout= 5):
+    def download(self,p_url, p_timeout= 5, headers:dict= None):
         if self.context:
             try:
-                self.res=self.context.get(url= p_url, timeout= p_timeout)
+                if not headers:
+                    self.res=self.context.get(url= p_url, timeout= p_timeout)
+                else:
+                    self.res= self.context.get(url= p_url, timeout= p_timeout, headers= headers)
                 if self.res:
                     return self.res.content, self.res.status_code
                 return p_url, "REQUESTS_OBJECT_IS_NULL"
