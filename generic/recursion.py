@@ -23,14 +23,18 @@ def recursionCall(func, upper_limit:int=200, *args, **wargs):
             break
     return args, wargs
 
-@recursion
-def gggd(*args, **kwargs):
-    print(kwargs['count'])  
-    if kwargs['count'] == 3000:
-        kwargs['break']= True
-        return args, kwargs
-    return gggd(*args, **kwargs)
+
     
 if __name__ == "__main__":
-    eee=recursionCall(gggd)
+    @recursion
+    def gggd(*args, **kwargs):
+        if kwargs['bbb'] == 3001:
+            kwargs['break']= True
+            return args, kwargs
+        print(kwargs['bbb'])
+        kwargs['bbb']+=1
+        return gggd(*args, **kwargs)
+        
+    kwargs={'bbb':1}
+    eee=recursionCall(gggd,**kwargs)
     eeee=""

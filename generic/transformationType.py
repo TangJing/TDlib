@@ -36,24 +36,31 @@ def transformation(value: any, transformationType):
                 else:
                     value = str(value)
             if transformationType == float:
-                if isinstance(value, (str, int,)):
-                    value = float(value)
-                else:
-                    raise Exception(
-                        'transformation float, value type must is str. value: %s' % value)
+                try:
+                    if isinstance(value, (str, int,)):
+                        value = float(value)
+                    else:
+                        raise Exception(
+                            'transformation float, value type must is str. value: %s' % value)
+                except Exception as e:
+                    raise e
             if transformationType == datetime.datetime:
                 if isinstance(value, str):
                     value = value.replace('/', '-')
-                    value = datetime.datetime.strptime(
-                        value, '%Y-%m-%d %H:%M:%S')
+                    if len(value)>10:
+                        value = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                    else:
+                        value = datetime.datetime.strptime(value, '%Y-%m-%d')
                 else:
                     raise Exception(
                         'transformation datetime, value type must is str. value:%s' % value)
             if transformationType == datetime.date:
                 if isinstance(value, str):
                     value = value.replace('/', '-')
-                    value = datetime.date(
-                        datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S'))
+                    if len(value)>10:
+                        value = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S').date()
+                    else:
+                        value= datetime.datetime.strptime(value, '%Y-%m-%d').date()
                 else:
                     raise Exception(
                         'transformation date, value type must is str. value: %s' % value)

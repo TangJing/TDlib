@@ -1,18 +1,21 @@
 import threading
-from TDhelper.network.socket import base, SOCKET_TYPE, SOCKET_EVENT, Event, trigger, call
+from threading import Lock
+from TDhelper.network.socket import base, SOCKET_TYPE, SOCKET_EVENT, Event, trigger, call,get_host_ip
 from TDhelper.network.socket.cache.queue import Q
-
+from TDhelper.network.socket.protocol.base import Protocol, analysis, ANALYSIS_STATUS
 
 class Server(base, threading.Thread):
     def __init__(self, ip, port, socket_type: SOCKET_TYPE = SOCKET_TYPE.TCPIP, listenCount=100, buffSize=1024):
         threading.Thread.__init__(self)
         super(Server, self).__init__()
+        self._clients_lock= Lock()
         self._type = socket_type
         self._uri = (ip, port)
         self._listenCount = listenCount
         self._runing = threading.Event()
         self._flag = threading.Event()
         self._buffSize = buffSize
+        self._clients= {}
 
     def run(self):
         try:
@@ -38,14 +41,16 @@ class Server(base, threading.Thread):
                         '''
                             Accept event
                         '''
-                        self.on(SOCKET_EVENT.onAccept.value, connection)
+                        self.on(SOCKET_EVENT.onAccept.value, connection, self)
                         '''
                         start recv thread
                         '''
-                        recvwork = threading.Thread(
+                        self._clients_lock.acquire()
+                        self._clients[connection.__hash__()]= threading.Thread(
                             target=self._recv, args={connection, })
-                        recvwork.setDaemon(True)
-                        recvwork.start()
+                        self._clients[connection.__hash__()].setDaemon(True)
+                        self._clients[connection.__hash__()].start()
+                        self._clients_lock.release()
                 if self._flag.is_set():
                     self._flag.set()
             else:
@@ -61,6 +66,8 @@ class Server(base, threading.Thread):
     @trigger("recv")
     def _recv(self, connection):
         try:
+            m_protocol = analysis(Protocol())
+            m_count=0
             while self._runing.is_set():
                 buff, connection= self.recv(connect= connection,recvLen= self._buffSize)
                 if not buff:
@@ -69,11 +76,19 @@ class Server(base, threading.Thread):
                 '''
                 Recv Event
                 '''
-                self.on(SOCKET_EVENT.onRecv.value, buff, connection)
+                m_count+=1
+                #print(buff)
+                m_protocol.recv(buff)
+                self.on(SOCKET_EVENT.onRecv.value, m_protocol, connection)
+                if m_protocol.state== ANALYSIS_STATUS.RECV_COMPLETE:
+                    m_protocol.resetState()
         except Exception as e:
             self.on(SOCKET_EVENT.onError.value, e)
         finally:
             # print("关闭 %s" % connection)
+            self._clients_lock.acquire()
+            self._clients.pop(connection.__hash__())
+            self._clients_lock.release()
             if connection:
                 connection.close()
 

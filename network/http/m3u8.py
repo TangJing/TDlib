@@ -225,8 +225,10 @@ class m3u8:
         '''
         self._prefix_url = uri.rsplit('/', 1)[0]  # 获取URI前缀
         self._current_m3u8_file = uri  # 当前下载M3U8 URI
+        print('download:%s'% uri)
         response, status = self.__request__(uri)
         if status == 200:
+            print('download:%s Ok'% uri)
             if response == self._m3u8_file_hash:
                 return uri, M3U8_STATUS.WAIT  # m3u8文件没有变化.返回等待状态.
             self._m3u8_file_hash = response
@@ -245,6 +247,7 @@ class m3u8:
                     self._m3u8_buffer_index = 1
                 return uri, M3U8_STATUS.SUCCESS
         else:
+            print('download:%s Error'% uri)
             self._complete_event__.set()
             self._event_create_m3u8_file__.set()
             return uri, M3U8_STATUS.ERROR

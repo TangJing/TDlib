@@ -3,10 +3,10 @@ import enum
 import hashlib
 import copy
 
-
 class Protocol:
-    def __init__(self, charset='utf-8'):
-        self.index = 0  # 包序号
+    def __init__(self, protocolver='td-protocol1.0', charset='utf-8'):
+        self.ver = protocolver  # 协议版本
+        self.index = -1  # 包序号
         self.charset = charset  # 数据块编码
         self.dataLength = 0  # 数据块长度
         self.dataMd5 = None  # 数据哈希
@@ -16,7 +16,7 @@ class Protocol:
         '''
             将封装好的协议包转为bytes数据准备发送
         '''
-        m_str = 'T-Protocol:\r'
+        m_str = ''
         for item in self.__dict__:
             m_str += str(self.__dict__[item]) + '\r'
         return bytes(m_str, encoding=self.charset)
@@ -42,7 +42,7 @@ class Protocol:
             return False
 
     def clear(self):
-        self.index = 0  # 包序号
+        self.index = -1  # 包序号
         self.charset = ''  # 数据块编码
         self.dataLength = 0  # 数据块长度
         self.dataMd5 = None  # 数据哈希
@@ -61,77 +61,56 @@ class analysis:
 
     def recv(self, buffer: bytes):
         self._buff += buffer
-        if self.state == ANALYSIS_STATUS.WAIT_RECV_HEADER:
-            self._getHeader()
-        elif self.state == ANALYSIS_STATUS.GET_DATA:
-            self.__getData()
+        self._getData()
 
-    def _getHeader(self):
-        if len(self._buff) >= 12 and self._buffOffset == 0 and self._protocol.dataLength == 0:
-            if bytes.decode(self._buff[0:12], encoding='utf-8') == 'T-Protocol:\r':
-                self._buffOffset += len(b'T-Protocol:\r')
+    def _getData(self):
+        while True:
+            if self._buffOffset >= len(self._buff):
+                break
+            m_buff = self._buff[self._buffOffset:len(self._buff)]
+            try:
+                m_offset = m_buff.index(b'\r')
+            except Exception as e:
+                m_offset = 0
+            if m_offset <= 0:
+                break
             else:
-                print(bytes.decode(self._buff[0:12], encoding='utf-8'))
-                raise Exception(
-                    'protocol header hav''t found T-Protocol field.')
-            m_count = 0
-            for m_item in self._buff[self._buffOffset:len(self._buff)]:
-                if m_item == 13:
-                    if self._counter == 0:
-                        self._protocol.index = int(bytes.decode(
-                            self._buff[self._buffOffset:self._buffOffset+m_count], encoding='utf-8'))
-                    elif self._counter == 1:
-                        self._protocol.charset = bytes.decode(
-                            self._buff[self._buffOffset:self._buffOffset+m_count], encoding='utf-8')
-                    elif self._counter == 2:
-                        self._protocol.dataLength = int(bytes.decode(
-                            self._buff[self._buffOffset:self._buffOffset+m_count], encoding='utf-8'))
-                    elif self._counter == 3:
-                        self._protocol.dataMd5 = bytes.decode(
-                            self._buff[self._buffOffset:self._buffOffset+m_count], encoding='utf-8')
-                        self.state = ANALYSIS_STATUS.GET_DATA
-                    self._counter += 1
-                    self._buffOffset += m_count+1
-                    m_count = 0
-                    if self.state == ANALYSIS_STATUS.GET_DATA:
-                        if len(self._buff) - self._buffOffset > 0:
-                            self.__getData()
-                        break
-                else:
-                    m_count += 1
-        else:
-            pass  # 数据缓存不够包头等待数据
-
-    def __getData(self):
-        m_buffLength = len(self._buff)
-        if self._recvDataLength < self._protocol.dataLength:
-            if m_buffLength >= self._buffOffset + self._protocol.dataLength:
-                self._protocol.data += self._buff[self._buffOffset:self._buffOffset+(
-                    self._protocol.dataLength-self._recvDataLength)]
-                self._buffOffset += self._protocol.dataLength - self._recvDataLength
-                self.__getDataComplete()
-        else:
-            self.__getDataComplete()
+                if self._counter == 0:
+                    self.state= ANALYSIS_STATUS.WAIT_RECV_HEADER
+                    self._protocol.ver = bytes.decode(
+                        m_buff[0:m_offset], encoding='utf-8')
+                elif self._counter == 1:
+                    self._protocol.index = int(bytes.decode(
+                        m_buff[0:m_offset], encoding='utf-8'))
+                elif self._counter == 2:
+                    self._protocol.charset = bytes.decode(
+                        m_buff[0:m_offset], encoding='utf-8')
+                elif self._counter == 3:
+                    self._protocol.dataLength = int(bytes.decode(
+                        m_buff[0:m_offset], encoding='utf-8'))
+                elif self._counter == 4:
+                    self._protocol.dataMd5 = bytes.decode(
+                        m_buff[0:m_offset], encoding='utf-8')
+                    self.state = ANALYSIS_STATUS.GET_DATA
+                elif self._counter == 5:
+                    self._protocol.data = m_buff[0:m_offset]
+                    self.state = ANALYSIS_STATUS.RECV_COMPLETE
+                self._buffOffset += m_offset+1
+                self._counter += 1
+                if self.state == ANALYSIS_STATUS.RECV_COMPLETE:
+                    self.__getDataComplete()
 
     def __getDataComplete(self):
         self.RecvPacketList.append(copy.deepcopy(self._protocol))
         self._protocol.clear()
         self._recvDataLength = 0
-        self._buff = self._buff[self._buffOffset+1:len(self._buff)]
+        self._buff = self._buff[self._buffOffset:len(self._buff)]
         self._buffOffset = 0
         self._counter = 0
-        if len(self._buff) > 0:
-            self.state = ANALYSIS_STATUS.WAIT_RECV_HEADER
-            self._getHeader()
-            if self.state != ANALYSIS_STATUS.RECV_COMPLETE:
-                self._protocol.clear()
-                self._buffOffset = 0
-                self._counter = 0
-                self._recvDataLength = 0
         self.state = ANALYSIS_STATUS.RECV_COMPLETE
 
     def getRecvData(self):
-        m_ret=[]
+        m_ret = []
         while True:
             m_ret.append(self.RecvPacketList[0])
             del(self.RecvPacketList[0])
@@ -140,7 +119,7 @@ class analysis:
         return m_ret
 
     def resetState(self):
-        self.state= ANALYSIS_STATUS.WAIT_RECV_HEADER
+        self.state = ANALYSIS_STATUS.WAIT_RECV_HEADER
 
     def getSendBuffer(self):
         return self._protocol.decode()

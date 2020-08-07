@@ -2,21 +2,29 @@ import socket
 from TDhelper.network.socket.model.SOCKET_MODELS import SOCKET_TYPE, SOCKET_EVENT
 from TDhelper.Event.Event import *
 
-
+def get_host_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+    return ip
 class base(Event):
     def __init__(self):
         self._mysocket = None
         self._socket_type = SOCKET_TYPE.TCPIP
         super(base, self).__init__()
 
-    def createsocket(self, sType=SOCKET_TYPE.TCPIP):
+    def createsocket(self, sType=SOCKET_TYPE.TCPIP, customize_socket:socket.socket= None):
         self._socket_type = sType
-        if self._socket_type == SOCKET_TYPE.TCPIP:
-            self._mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # self._mysocket.setsockopt(socket.SOL___mysocket,socket.SO_REUSEADDR,1)
+        if not customize_socket:
+            if self._socket_type == SOCKET_TYPE.TCPIP:
+                self._mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            elif self._socket_type == SOCKET_TYPE.UDP:
+                self._mysocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         else:
-            self._mysocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            # self._mysocket.setsockopt(socket.SOL___mysocket,socket.SO_REUSEADDR,1)
+            self._mysocket= customize_socket
 
     def setTimeout(self, timeout):
         self._mysocket.settimeout(timeout)
@@ -45,11 +53,14 @@ class base(Event):
             self._mysocket.sendto(buff, connect)
 
     def connection(self, uri):
-        self._mysocket.connect(uri)
+        try:
+            self._mysocket.connect(uri)
+        except Exception as e:
+            raise e
 
     def getSocket(self):
         return self._mysocket
 
     def close(self):
-        # self.___mysocket.shutdown(socket.SHUT_RDWR)
+        self._mysocket.shutdown(socket.SHUT_RDWR)
         self._mysocket.close()
