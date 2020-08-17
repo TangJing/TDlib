@@ -62,6 +62,8 @@ class threadPools:
                         m_thread.start()
                         if self.isJoin:
                             m_thread.join()
+                    else:
+                        self.threadComplete(m_thread[0])
                 else:
                     raise Exception('thread func is none.')
         except Exception as e:

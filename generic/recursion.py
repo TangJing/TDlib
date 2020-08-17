@@ -1,4 +1,18 @@
+#!/usr/bin/env python3.6
+# -*- encoding: utf-8 -*-
+'''
+@File    :   recursion.py
+@Time    :   2020/01/16 23:06:51
+@Author  :   Tang Jing 
+@Version :   1.0.0
+@Contact :   yeihizhi@163.com
+@License :   (C)Copyright 2020
+@Desc    :   None
+'''
+
+# here put the import lib
 import functools
+# code start
 
 def recursion(func):
     def wapper(*args, **kwargs):

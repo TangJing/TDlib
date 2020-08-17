@@ -13,7 +13,7 @@ class dbhelper(mongodbclient):
             else:
                 raise "mongodb配置没有找到."
         except Exception as e:
-            raise
+            raise e
 
     def setCollection(self, collectionName):
         try:

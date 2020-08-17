@@ -331,7 +331,7 @@ class m3u8:
                             i += 1
                             if i > self._reconnect or status == 200:  # if status==200:
                                 break
-                    else:
+                    if status == 200:
                         total_download_rate=self._EXT_X_M3U8_PLAY_LIST_INDEX__/len(
                             self._EXT_X_M3U8_PLAY_LIST__)*100
                         if total_download_rate>100.00:
@@ -341,15 +341,14 @@ class m3u8:
                         # 建立播放索引.
                         if ts_struct['index'] >= self._m3u8_buffer_index:
                             self.__create_m3u8_play_file__()
-                        # 更改TS下载列表对应文件下载状态.
-                        self._EXT_X_M3U8_PLAY_LIST__[m_index]['state'] = True
                         self._lock__.acquire()
+                        ts_struct['state']=True # 更改TS下载列表对应文件下载状态.#self._EXT_X_M3U8_PLAY_LIST__[m_index]['state'] = True
                         ts_struct['offset'] = (
                             self._downlaod_buffer_length, len(file_bytes))
                         self._downlaod_buffer_length += len(file_bytes)
-                        self._lock__.release()
                         self._EXT_X_M3U8_PLAY_LIST__[
                             ts_struct['index']] = ts_struct
+                        self._lock__.release()
                         # 用索引号替代原TS文件名称 ts_struct['url'].rsplit('/', 1)[1]
                         tmp_file_name = str(
                             ts_struct['filename']).split('?')[0]
@@ -510,7 +509,16 @@ class m3u8:
         '''
         ret= ''
         if uri[0]=='/':
-            ret= self._prefix_url.rsplit('/',1)[0]
+            if re.search(r'http:',self._prefix_url, re.M|re.I):
+                m_offset= self._prefix_url.find('/',7)
+                if m_offset>0:
+                    ret= self._prefix_url[0:m_offset]
+            elif re.search(r'https:',self._prefix_url, re.M|re.I):
+                m_offset= self._prefix_url.find('/',8)
+                if m_offset>0:
+                    ret= self._prefix_url[0:m_offset]
+            else:
+                ret= self._prefix_url.rsplit('/',1)[0]
         else:
             ret = self._prefix_url
         for item in uri.split('/'):
@@ -554,8 +562,13 @@ class m3u8:
             else:
                 self.__setattr__(m_key, True)
         else:
-            if re.search(r"\.m3u8", content):
-                self._EXT_X_M3U8_FILE_LIST__.append(content)
+            m_stream= StringIO(content)
+            m_line= m_stream.readline()
+            while m_line:
+                if re.search(r'/|.m3u8', content):
+                    self._EXT_X_M3U8_FILE_LIST__.append(m_line)
+                m_line= m_stream.readline()
+            m_stream= None
 
     def __match__(self, regex, content):
         '''
