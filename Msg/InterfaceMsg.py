@@ -29,7 +29,7 @@ class Msg():
            apiKey (str): send api keyword,default value is "send".
         '''
     @abc.abstractclassmethod
-    def MultipleSend(self,sendTo:array=[], sendBuff:str="",apiKey:str="multiplesend"):
+    def MultipleSend(self,sendTo:[]=[], sendBuff:str="",apiKey:str="multiplesend"):
         '''批量发送
 
             Args:

@@ -1,3 +1,40 @@
+class ApiConfig():
+    '''Api Config
+        
+        Args:
+            key (str): api keyword.
+            uri (str): api uri.
+            apiType (str): api Type, default value is "get".
+            argsTemplete (str): api param format(Example "param1={0}&param2={1}"), default is "param1={0}".
+            descrition (str): api descrition.
+    '''
+    def __init__(self, key:str, uri:str, apiType:str="get", argsTemplete:str="param1={0}", descrition:str=""):
+        self._key=key
+        self._uri=uri
+        self._type=apiType
+        self._argsTemplete=argsTemplete
+        self._descrition=descrition
+
+    @property
+    def Key(self):
+        return self._key
+
+    @property
+    def Uri(self):
+        return self._uri
+
+    @property
+    def Type(self):
+        return self._type
+
+    @property
+    def ArgsTemplete(self):
+        return self._argsTemplete
+
+    @property
+    def Descrition(self):
+        return self._descrition
+
 class Config():
     '''SMS CONFIG
        
@@ -42,7 +79,7 @@ class Config():
     
     @property
     def Account(self):
-        return self.account
+        return self._account
 
     @property
     def Secret(self):
@@ -50,46 +87,10 @@ class Config():
 
     @property
     def Certificate(self):
-        return self._name
+        return self._certificate
 
     @property
     def Apis(self):
         return self._apiList
 
 
-class ApiConfig():
-    '''Api Config
-        
-        Args:
-            key (str): api keyword.
-            uri (str): api uri.
-            apiType (str): api Type, default value is "get".
-            argsTemplete (str): api param format(Example "param1={0}&param2={1}"), default is "param1={0}".
-            descrition (str): api descrition.
-    '''
-    def __init__(self, key:str, uri:str, apiType:str="get", argsTemplete:str="param1={0}", descrition:str=""):
-        self._key=key
-        self._uri=uri
-        self._type=apiType
-        self._argsTemplete=argsTemplete
-        self._descrition=descrition
-
-    @property
-    def Key(self):
-        return self._key
-
-    @property
-    def Uri(self):
-        return self._uri
-
-    @property
-    def Type(self):
-        return self._type
-
-    @property
-    def ArgsTemplete(self):
-        return self._argsTemplete
-
-    @property
-    def Descrition(self):
-        return self._descrition

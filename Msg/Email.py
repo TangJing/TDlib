@@ -21,11 +21,11 @@ class EmailByApi(Msg):
 
     def Install(self):
         for item in self._config.Apis:
-            self._sendHandle.Addapi(item.Key, item.Uri, item.argsTemplete, item.Type)
-        self._sendHandle.Save()
+            self._sendHandle.AddApi(item.Key, item.Uri, item.argsTemplete, item.Type)
+        self._sendHandle.SaveToFile()
 
     def Uninstall(self):
-        self._sendHandle.cle
+        self._sendHandle.ClearCache()
 
 class EmailByMailServer(Msg):
     def __init__(self, config, sendBy=''):

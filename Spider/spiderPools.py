@@ -39,7 +39,11 @@ class spiderPools(pools):
             m_spider.registerEvent(
                 Analysis_Event.onFingerprintComplete, self.onFingerprintComplete)
             self.push(m_spider)
-
+    def serach(self,key=None):
+        if key:
+            pass
+        else:
+            raise Exception('key is none.')
     def pushCache(self, value):
         self._cache.push(value[0], value[2], value[1])
 

@@ -1,4 +1,4 @@
-from Msg.InterfaceMsg import *
+from TDhelper.Msg.InterfaceMsg import *
 from TDhelper.apiCore import *
 
 class SMS(Msg):
@@ -42,8 +42,8 @@ class SMS(Msg):
     def Install(self):
         '''api config'''
         for item in self._config.Apis:
-            self._sendHandle.Addapi(item.Key, item.Uri, item.argsTemplete, item.Type)
-        self._sendHandle.Save()
+            self._sendHandle.AddApi(item.Key, item.Uri, item.argsTemplete, item.Type)
+        self._sendHandle.SaveToFile()
 
     def Unstall(self):
         '''clear all api'''
