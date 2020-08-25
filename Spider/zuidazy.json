@@ -6,6 +6,15 @@
 	"source_index": 3,
 	"domain": "zuidazy4.com",
 	"entrance": "http://zuidazy4.com",
+	"search_cfg":{
+		"url":"http://zuidazy5.com/index.php?m=vod-search",
+		"params":{
+			"wd":"",
+			"submit":"search"
+		},
+		"method":"post",
+		"content_type":"application/x-www-form-urlencoded"
+	},
 	"prefix_domain": "http://zuidazy4.com",
 	"access_delays": 0,
 	"exclude": ["http://zuidazy4.com/\\?m=vod-type-id-22.html","http://zuidazy4.com/\\?m=vod-type-id-34.html"],
@@ -83,7 +92,7 @@
 		},
 		{
 			"type": "list",
-			"url_checking": "http://zuidazy4.com/\\?m=vod-type-id-[1-9]\\d*\\.html|http://zuidazy4.com/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*\\.html",
+			"url_checking": "http://zuidazy4.com/\\?m=vod-type-id-[1-9]\\d*\\.html|http://zuidazy4.com/\\?m=vod-type-id-[1-9]\\d*-pg-[1-9]\\d*\\.html|http://zuidazy5.com/index.php\\?m=vod-search",
 			"start_anchor": "<div class=\"xing_vb\">",
 			"end_anchor": "<!-- 底部截取标签-->",
 			"page_filter": [],

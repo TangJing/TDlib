@@ -12,15 +12,44 @@ class
 description
     http帮助类
 '''
+
+
 class m_http:
     context = None
-    res = None 
+    res = None
+
     def __init__(self):
         self.context = requests
-        
-        
-    #url:wetsite url address
-    def getcontent(self,p_url, p_timeout= 5, headers:dict= None):
+
+    def post(self, url, header: dict= None, data= None, timeout= 5):
+        try:
+            if header:
+                self.res = self.context.post(
+                    url=url, data=data, headers=header, timeout=timeout)
+            else:
+                self.res = self.context.post(url, timeout=timeout)
+            if self.res:
+                return self.res.text, self.res.status_code
+            return url, "REQUESTS_OBJECT_IS_NULL"
+        except exceptions.HTTPError as e:
+            return e, "CONNECT_IS_ERROR"
+        except exceptions.Timeout as e:
+            return e, "TIME_OUT"
+        except exceptions.ConnectTimeout as e:
+            return e, 'CONNECT_TIME_TIMEOUT'
+        except exceptions.ProxyError as e:
+            return e, 'PROXY_ERROR'
+        except exceptions.SSLError as e:
+            return e, 'SSL_ERROR'
+        except exceptions.URLRequired as e:
+            return e, 'URL_REQUIRED'
+        except exceptions.BaseHTTPError as e:
+            return e, 'BASE_HTTP_ERROR'
+        except Exception as e:
+            return e, "ERROR"
+
+    # url:wetsite url address
+    def getcontent(self, p_url, p_timeout=5, headers: dict = None):
         '''
         Featuren\r\n
             getcontent(self,url)\r\n
@@ -34,20 +63,21 @@ class m_http:
         if self.context:
             try:
                 if not headers:
-                    self.res=self.context.get(url= p_url, timeout= p_timeout)
+                    self.res = self.context.get(url=p_url, timeout=p_timeout)
                 else:
-                    self.res= self.context.get(url= p_url, timeout= p_timeout, headers= headers)
+                    self.res = self.context.get(
+                        url=p_url, timeout=p_timeout, headers=headers)
                 if self.res:
                     return self.res.text, self.res.status_code
                 return p_url, "REQUESTS_OBJECT_IS_NULL"
             except exceptions.HTTPError as e:
                 return e, "CONNECT_IS_ERROR"
             except exceptions.Timeout as e:
-                return e,"TIME_OUT"
+                return e, "TIME_OUT"
             except exceptions.ConnectTimeout as e:
                 return e, 'CONNECT_TIME_TIMEOUT'
             except exceptions.ProxyError as e:
-                return e,'PROXY_ERROR'
+                return e, 'PROXY_ERROR'
             except exceptions.SSLError as e:
                 return e, 'SSL_ERROR'
             except exceptions.URLRequired as e:
@@ -55,22 +85,23 @@ class m_http:
             except exceptions.BaseHTTPError as e:
                 return e, 'BASE_HTTP_ERROR'
             except Exception as e:
-                return e,"ERROR"
+                return e, "ERROR"
 
-    def download(self,p_url, p_timeout= 5, headers:dict= None):
+    def download(self, p_url, p_timeout=5, headers: dict = None):
         if self.context:
             try:
                 if not headers:
-                    self.res=self.context.get(url= p_url, timeout= p_timeout)
+                    self.res = self.context.get(url=p_url, timeout=p_timeout)
                 else:
-                    self.res= self.context.get(url= p_url, timeout= p_timeout, headers= headers)
+                    self.res = self.context.get(
+                        url=p_url, timeout=p_timeout, headers=headers)
                 if self.res:
                     return self.res.content, self.res.status_code
                 return p_url, "REQUESTS_OBJECT_IS_NULL"
             except Exception as e:
                 return e, "CONNECT_IS_ERROR"
 
-    def https(self,url,*args,**kwargs):
+    def https(self, url, *args, **kwargs):
         '''
         certificate
         '''

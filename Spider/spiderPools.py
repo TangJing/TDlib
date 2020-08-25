@@ -21,6 +21,7 @@ class spiderPools(pools):
     def __init__(self, rulesConfig, pool_length=10, cache_size=50, fingerprint=True):
         super(spiderPools, self).__init__(pool_length)
         self._fingerprint = fingerprint  # 重复检查开关
+        self._rulesConfig= rulesConfig
         self._cache = L1(cache_size)
         self._exclude_url = {}
         self._cache.registerEvent(L1_EVENT.onPush, self.onPush)
@@ -39,9 +40,21 @@ class spiderPools(pools):
             m_spider.registerEvent(
                 Analysis_Event.onFingerprintComplete, self.onFingerprintComplete)
             self.push(m_spider)
+
     def serach(self,key=None):
         if key:
-            pass
+            m_search = Analysis(self._rulesConfig)
+            m_search.registerEvent(
+                Analysis_Event.onIndexComplete, self.onIndexComplete)
+            m_search.registerEvent(
+                Analysis_Event.onListComplete, self.onListComplete)
+            m_search.registerEvent(Analysis_Event.onDebug, self.onDebug)
+            m_search.registerEvent(
+                Analysis_Event.onDetailComplete, self.onDetailComplete)
+            m_search.registerEvent(Analysis_Event.onError, self.onError)
+            m_search.registerEvent(
+                Analysis_Event.onFingerprintComplete, self.onFingerprintComplete)
+            m_search.search([key])
         else:
             raise Exception('key is none.')
     def pushCache(self, value):
