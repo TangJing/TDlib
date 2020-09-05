@@ -38,14 +38,14 @@ def PoolsFunc(func):
 class threadPools:
     def __init__(self, threadfunc, daemon=False, isJoin=False, maxSize=10):
         self.Daemon = daemon
-        self.isJoin = isJoin
-        self._processFlag = True
-        self._threadLockArgs = Lock()
-        self._threadLockThreadFunc = Lock()
-        self._threadLockThreadFunc = Lock()
-        self._activeThread = {}
-        self._list = queue.Queue(maxSize)
-        self._args = []
+        self.isJoin = isJoin 
+        self._processFlag = True # 方法状态
+        self.processLock= Lock() # 方法事务锁
+        self._threadLockArgs = Lock() # 任务队列锁
+        self._threadLockThreadFunc = Lock() # 线程队列锁
+        self._activeThread = {} # 活跃线程
+        self._list = queue.Queue(maxSize) # 线程队列
+        self._args = [] # 任务队列
         for offset in range(0, maxSize):
             self._list.put((offset, threadfunc))
 
