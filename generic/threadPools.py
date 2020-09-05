@@ -1,8 +1,10 @@
 from multiprocessing import Process, Lock
 from threading import Thread
+from array import array
 import queue
 import copy
 import time
+
 def PoolsFunc(func):
     def wapper(*args:tuple, **kwargs):
         try:
@@ -15,20 +17,14 @@ def PoolsFunc(func):
                 raise Exception('params error.')
             kwargs['handle']= thread_pools
             kwargs['thread-id']= thread_index
-            m_args=[]
-            for offset in range(0,len(args[2])):
-                m_args.append(args[2][offset])
+            if not isinstance(args[2],list):
+                raise Exception("params args must is <list>. you given an <%s>." % type(args[2]).__name__)
+            m_args=args[2]
             while thread_pools._processFlag:
                 if not m_args:
                     break
-                ret= func(tuple(m_args), **kwargs)
-                m_get_args= thread_pools.popArgs()
-                if m_get_args:
-                    m_args=[]
-                    for offset in range(0,len(m_get_args)):
-                        m_args.append(m_get_args[offset])
-                else:
-                    break
+                ret= func(*m_args, **kwargs)
+                m_args= thread_pools.popArgs()
             thread_pools.threadComplete(thread_index)
             return ret
         except Exception as e:
