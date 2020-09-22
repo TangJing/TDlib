@@ -26,6 +26,7 @@ class spiderPools(pools):
         self._exclude_url = {}
         self._cache.registerEvent(L1_EVENT.onPush, self.onPush)
         self._debug = False
+        self._thread_state= False
         # 初始化爬虫线程池
         for i in range(0, pool_length):
             m_spider = Analysis(rulesConfig)
@@ -60,14 +61,20 @@ class spiderPools(pools):
     def pushCache(self, value):
         self._cache.push(value[0], value[2], value[1])
 
+    @property
+    def State(self):
+        return self._thread_state
+
     def getCache(self):
         return self._cache.getCache()
 
     def onPush(self, *args, **kwargs):
         self._lock.acquire()
         if self.available_resources > 0:
+            self._thread_state= True
             self.__startSpiderThread()
         self._lock.release()
+
     def __startSpiderThread(self):
         thread_spider = Thread(target=self.__process)
         thread_spider.start()
@@ -101,6 +108,7 @@ class spiderPools(pools):
                     else:
                         m_state = False
                 else:
+                    self._thread_state= False
                     m_state = False
             self.push(process_spider)
         else:

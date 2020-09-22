@@ -1,6 +1,7 @@
 import urllib
+import socket
 from urllib import request
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 def GET(uri:str, http_headers:dict= None, time_out:int= 1):
     """
@@ -26,8 +27,13 @@ def GET(uri:str, http_headers:dict= None, time_out:int= 1):
             req= request.Request(uri, method= 'GET')
         with request.urlopen(req,timeout= time_out) as response:
             return response.getcode(),response.read()
-    except Exception as e:
-        return 500, repr(e)
+    except HTTPError as e:
+        return e.code, e.reason
+    except URLError as e:
+        if isinstance(e.reason, socket.timeout):
+            return 408, None
+        else:
+            return e.reason, None
 
 def POST(uri, post_data:bytes, http_headers= None, time_out= 1, charset= 'UTF-8'):
     """
@@ -55,5 +61,10 @@ def POST(uri, post_data:bytes, http_headers= None, time_out= 1, charset= 'UTF-8'
             req= request.Request(uri, data= post_data, method= 'POST')
         with request.urlopen(req, timeout= time_out) as response:
             return response.getcode(),response.read()
-    except urllib.error.URLError as e:
-        return 500, repr(e)
+    except HTTPError as e:
+        return e.code, e.reason
+    except URLError as e:
+        if isinstance(e.reason, socket.timeout):
+            return 408, None
+        else:
+            return e.reason, None
