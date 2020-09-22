@@ -203,7 +203,11 @@ class RPC:
                                                         for item in m_returns['descriptions']:
                                                             m_returns_description= 'returns='+ str(m_returns_id)
                                                             m_returns_description+= '&key='+parse.quote(item['key'])
-                                                            m_returns_description+= '&valueDescription='+parse.quote(item['valueDescription'])
+                                                            m_description= item['valueDescription']
+                                                            m_description= m_description.replace("<","&lt;")
+                                                            m_description= m_description.replace(">","&gt;")
+                                                            m_description= m_description.replace("\r\n","<br />")
+                                                            m_returns_description+= '&valueDescription='+parse.quote(m_description)
                                                             state, ret= POST(self._sc_uri+ "returnDescriptons/", post_data=bytes(m_returns_description,encoding='utf-8'),time_out=15)
                                                             if state!=200:
                                                                 m_msg = 'register return description failed. http code(%d)'% state
@@ -269,7 +273,7 @@ class RPC:
                     if param['key'].lower() != 'pk':
                         if param['key'] in kwargs:
                             params_data += param['key'] + \
-                                '=' + str(kwargs[param['key']])
+                                '=' + parse.quote(str(kwargs[param['key']]))
                         else:
                             if param['defaultValue']:
                                 params_data += param['key'] + '=' + param['defaultValue']
@@ -277,12 +281,12 @@ class RPC:
                         if m_count < len(kwargs):
                             params_data += "&"
                     else:
-                        m_uri.replace("{pk}", str(kwargs[param['key']]))
+                        m_uri.replace("{pk}", parse.quote(str(kwargs[param['key']])))
                 try:
                     if m_method == u"GET":
                         m_uri += "?" + params_data
                         self._log(m_uri)
-                        state, ret = GET(m_uri, time_out=15)
+                        state, ret = GET(uri= m_uri, time_out=15)
                         if state == 200:
                             try:
                                 ret= json.loads(str(ret, encoding="utf-8"))
@@ -391,7 +395,7 @@ if __name__ == '__main__':
         }
     ]
     }
-
+    '''
     count=0
     for item in serviceConfig["services"]:
         print(m_rpc.register(
@@ -399,18 +403,16 @@ if __name__ == '__main__':
             hosts=item['hosts'],
             methods=item['methods']))
     '''
-    g=m_rpc.handle("PERMISSION_CENTER")
+    g=m_rpc.handle("GENERAL_SERVICE")
     ret= g.call(
-        "PERMISSION_CENTER_PERMISSIONS_CREATE",
+        "GENERAL_SERVICE_VALIDATE_CODE_VALIDATE",
         **{
-            "permission_key":"COUNTRY_CREATE",
-            "permission_name":"新建一个国家",
-            "permission_domain":"http://127.0.0.1:8003",
-            "permission_uri":"/api/countrys",
-            "permission_enable": 1
+            "validateType": 1,
+            "triggerEvent": "手机验证码登录",
+            "receive": '8615013782894',
+            "code": '22222'
         })
     print(ret)
     #m_id= ret['data']['id']
     #ret=g.call('REMOTE_CONFIG_CONFIG_REGISTER',**{"config_key":"test1","config_value":"testvalue","service":m_id})
     #print(ret)
-    '''
