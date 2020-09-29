@@ -67,7 +67,7 @@ class RPC:
             if k.lower() != 'description':
                 if not v:
                     raise Exception("service '%s' value can't is none." % k)
-            m_service_post_data += k+"="+str(v)
+            m_service_post_data += k+"="+ parse.quote(str(v))
             m_count += 1
             if m_count < len(service):
                 m_service_post_data += "&"
@@ -87,7 +87,7 @@ class RPC:
                         m_service_hosts_post_data = ''
                         for k, v in hosts[i].items():
                             if v:
-                                m_service_hosts_post_data += k+"="+str(v)
+                                m_service_hosts_post_data += k+"="+parse.quote(str(v))
                                 m_count += 1
                                 if m_count < len(hosts[i]):
                                     m_service_hosts_post_data += "&"
@@ -117,7 +117,7 @@ class RPC:
                                         raise Exception(
                                             'methods (%s) is none.' % k.lower())
                                 if k.lower() != 'method':
-                                    m_service_uri_post_data += k + "=" + str(v)
+                                    m_service_uri_post_data += k + "=" + parse.quote(str(v))
                                 else:
                                     m_value = 0
                                     if v.upper() == u"GET":
@@ -163,7 +163,7 @@ class RPC:
                                                         raise Exception(
                                                             'methods params (%s) is none.' % k.lower())
                                                     m_service_method_params_post_data += k + \
-                                                        "=" + str(v)
+                                                        "=" + parse.quote(str(v))
                                                     m_count += 1
                                                     try:
                                                         if m_count < len(params[param_offset]):
@@ -276,7 +276,7 @@ class RPC:
                                 '=' + parse.quote(str(kwargs[param['key']]))
                         else:
                             if param['defaultValue']:
-                                params_data += param['key'] + '=' + param['defaultValue']
+                                params_data += param['key'] + '=' + parse.quote(param['defaultValue'])
                         m_count += 1
                         if m_count < len(kwargs):
                             params_data += "&"
