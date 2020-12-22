@@ -56,8 +56,7 @@ class spiderPools(pools):
             m_search.registerEvent(
                 Analysis_Event.onFingerprintComplete, self.onFingerprintComplete)
             m_search.search([key])
-        else:
-            raise Exception('key is none.')
+
     def pushCache(self, value):
         self._cache.push(value[0], value[2], value[1])
 
@@ -100,7 +99,7 @@ class spiderPools(pools):
                             self._debug= False
                             process_spider.start(m_url[2], m_url[0])
                         except Exception as e:
-                            raise e
+                            pass
                         if process_spider.getStatus == SPIDER_STATUS.SPIDER_FINGERPRINT_IS_REPEAT:
                             if m_url[1]:
                                 self._exclude_url[m_url[1]
@@ -112,7 +111,7 @@ class spiderPools(pools):
                     m_state = False
             self.push(process_spider)
         else:
-            raise Exception('error')
+            pass
 
     # 事件监听
     def onIndexComplete(self, *args, **kwargs):
@@ -129,7 +128,7 @@ class spiderPools(pools):
                             self._lock.acquire()
                             self.on(event.onListen, *args, **kwargs)
                     except Exception as e:
-                        raise e
+                        pass
                     finally:
                         if not self._debug:
                             self._lock.release()
@@ -150,7 +149,7 @@ class spiderPools(pools):
                             self._lock.acquire()
                             self.on(event.onListen, *args, **kwargs)
                     except Exception as e:
-                        raise e
+                        pass
                     finally:
                         if not self._debug:
                             self._lock.release()
@@ -169,7 +168,7 @@ class spiderPools(pools):
                         self._lock.acquire()                    
                         self.on(event.onListen, *args, **kwargs)
                 except Exception as e:
-                    raise e
+                    pass
                 finally:
                     if not self._debug:
                         self._lock.release()
@@ -188,7 +187,7 @@ class spiderPools(pools):
                 self.onIndexComplete(*args, **kwargs)
             return self.on(event.onListen, *args, **kwargs)
         except Exception as e:
-            raise e
+            pass
         finally:
             self._lock.release()
 
@@ -206,7 +205,7 @@ class spiderPools(pools):
                     m_badRequest.toSave()
             return self.on(event.onListen, *args, **kwargs)
         except Exception as e:
-            raise e
+            pass
         finally:
             self._lock.release()
 
@@ -255,7 +254,7 @@ class spiderPools(pools):
                 self._lock.acquire()        
                 self.on(event.onListen, *args, **kwargs)
         except Exception as e:
-            raise e
+            pass
         finally:
             if not self._debug:
                 self._lock.release()

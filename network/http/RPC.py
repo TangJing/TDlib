@@ -1,15 +1,277 @@
 import json
 import copy
 from urllib import parse
+from types import FunctionType
+from TDhelper.generic.classDocCfg import doc
 from TDhelper.network.http.REST_HTTP import GET, POST
 from TDhelper.Decorators.log import logging, logging_setup
+
+
+class RPCRegister:
+    def __init__(self, serviceConfig, HostConfig, rpcConfig):
+        self._serviceConfig = serviceConfig
+        self._hostConfig = HostConfig
+        self._access_token = rpcConfig['token']
+        self._m_heads = {}
+        self._m_heads['api-token'] = self._access_token if self._access_token else ''
+        self._sc_uri = rpcConfig['uri']
+
+    def RegisterRPC(self):
+        return self._registerService()
+
+    def RegisterMethod(self, pk, serviceClass):
+        self._registerMehotd(pk, serviceClass)
+
+    def _registerService(self):
+        m_service_post_data = ''
+        m_count = 0
+        # 生成注册服务参数.
+        for k, v in self._serviceConfig.items():
+            if k.lower() != 'description':
+                if not v:
+                    raise Exception("service '%s' value can't is none." % k)
+            m_service_post_data += k+"=" + parse.quote(str(v))
+            m_count += 1
+            if m_count < len(self._serviceConfig):
+                m_service_post_data += "&"
+        # 注册服务基本信息.
+        state, ret = POST(self._sc_uri+"services/", post_data=bytes(
+            m_service_post_data, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
+        if state == 200:
+            ret = str(ret, encoding='utf-8')
+            ret = json.loads(ret, encoding='utf-8')
+            if ret["state"] == 200:
+                logging.info("%s(%s) register success." % (
+                    self._serviceConfig['key'], self._serviceConfig['name']))
+                if ret["msg"]["id"]:
+                    self._registerHost(ret["msg"]["id"], self._hostConfig)
+                    #self._registerMehotd(ret["msg"]["id"], serviceClass)
+                    return ret['msg']["id"]
+                else:
+                    return None
+            else:
+                return None
+        else:
+            return None
+
+    def _registerHost(self, pk, hosts):
+        # 注册服务器信息.
+        for i in range(0, len(hosts)):
+            hosts[i]['service'] = pk
+            hosts[i]['state'] = True
+            m_count = 0
+            m_service_hosts_post_data = ''
+            for k, v in hosts[i].items():
+                if v:
+                    m_service_hosts_post_data += k+"="+parse.quote(str(v))
+                    m_count += 1
+                    if m_count < len(hosts[i]):
+                        m_service_hosts_post_data += "&"
+                else:
+                    raise Exception(
+                        "register hosts {} can't is none." % k)
+            state, ret = POST(self._sc_uri+"hosts/", post_data=bytes(
+                m_service_hosts_post_data, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
+            if state != 200:
+                logging.error('register service hosts failed. msg:{}' %
+                              str(ret, encoding='utf-8'))
+            else:
+                ret = json.loads(str(ret, encoding='utf-8'))
+                if ret['state'] != 200:
+                    m_msg = 'register service hosts failed. http code({}), msg:{}' % (ret[
+                        'state'], ret['msg'])
+                    logging.error(m_msg)
+                else:
+                    logging.info("register service hosts(%s:%s) success." % (
+                        hosts[i]['host'], hosts[i]["port"]))
+
+    def _registerMehotd(self, pk, serviceClass):
+        # 注册方法
+        for k, v in serviceClass.__dict__.items():
+            if isinstance(v, FunctionType):
+                func_name = v.__name__.upper()
+                if v.__doc__:
+                    methods = doc(v.__doc__, "rpc")
+                    if methods:
+                        methods = methods.replace("\n", "").strip()
+                        try:
+                            methods = [json.loads(methods, encoding='utf-8')]
+                            for i in range(0, len(methods)):
+                                # todo register method.
+                                methods[i]['service'] = pk
+                                if not 'key' in methods[i]:
+                                    methods[i]['key'] = self._serviceConfig['key'].upper(
+                                    )+"."+serviceClass.__name__.upper()+"_" + func_name
+                                else:
+                                    if not methods[i]['key']:
+                                        methods[i]['key'] = self._serviceConfig['key'].upper(
+                                        )+"."+serviceClass.__name__.upper()+"_" + func_name
+                                    else:
+                                        if len(methods[i]['key'].split('.')) == 1:
+                                            methods[i]['key'] = self._serviceConfig['key'].upper(
+                                            )+"."+serviceClass.__name__.upper()+"_" + methods[i]['key']
+                                        else:
+                                            logging.error(
+                                                "%s key can not contain (.) ." % methods[i]['key'])
+                                m_service_uri_post_data = ''
+                                if not methods[i]['uri'].endswith('/'):
+                                    methods[i]['uri'] += '/'
+                                m_count = 0
+                                for k, v in methods[i].items():
+                                    if k.lower() != 'params':
+                                        if k.lower() == 'key' or k.lower() == 'uri' or k.lower() == 'method':
+                                            if not v:
+                                                raise Exception(
+                                                    'methods (%s) is none.' % k.lower())
+                                        if k.lower() != 'method':
+                                            m_service_uri_post_data += k + \
+                                                "=" + parse.quote(str(v))
+                                        else:
+                                            m_value = 0
+                                            if v.upper() == u"GET":
+                                                m_value = 1
+                                            elif v.upper() == u"POST":
+                                                m_value = 2
+                                            elif v.upper() == u"PUT":
+                                                m_value = 3
+                                            elif v.upper() == u"DELETE":
+                                                m_value = 4
+                                            m_service_uri_post_data += k + \
+                                                "=" + str(m_value)
+                                        m_count += 1
+                                        if 'params' in methods[i]:
+                                            if m_count < len(methods[i])-1:
+                                                m_service_uri_post_data += "&"
+                                        else:
+                                            if m_count < len(methods[i]):
+                                                m_service_uri_post_data += "&"
+                                state, ret = POST(self._sc_uri+"uri/", post_data=bytes(
+                                    m_service_uri_post_data, encoding='utf8'), http_headers=self._m_heads, time_out=15)
+                                if state != 200:
+                                    logging.error('register service methods failed. msg:{}' % str(
+                                        ret, encoding='utf-8'))
+                                else:
+                                    ret = json.loads(
+                                        str(ret, encoding='utf-8'))
+                                    if ret['state'] != 200:
+                                        m_msg = 'register service methods failed. http code(%d), msg:%s' % (
+                                            ret['state'], ret['msg'])
+                                        logging.error(m_msg)
+                                    else:
+                                        logging.info(
+                                            "%s register success." % methods[i]['key'])
+                                        if ret:
+                                            if 'params' in methods[i]:
+                                                params = methods[i]['params']
+                                                m_method_id = ret['msg']["id"]
+                                                if params:
+                                                    # 有参数能注册.
+                                                    for param_offset in range(0, len(params)):
+                                                        params[param_offset]['serviceUri'] = m_method_id
+                                                        m_service_method_params_post_data = ''
+                                                        m_count = 0
+                                                        for k, v in params[param_offset].items():
+                                                            if not v:
+                                                                raise Exception(
+                                                                    'methods params (%s) is none.' % k.lower())
+                                                            m_service_method_params_post_data += k + \
+                                                                "=" + \
+                                                                parse.quote(
+                                                                    str(v))
+                                                            m_count += 1
+                                                            try:
+                                                                if m_count < len(params[param_offset]):
+                                                                    m_service_method_params_post_data += "&"
+                                                            except Exception as e:
+                                                                raise e
+                                                        state, ret = POST(
+                                                            self._sc_uri+"params/", post_data=bytes(m_service_method_params_post_data, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
+                                            # 注册返回值
+                                            if 'returns' in methods[i]:
+                                                m_returns = methods[i]['returns']
+                                                if m_returns:
+                                                    # 有返回值设置进行注册.
+                                                    reg_returns_params = ''
+                                                    m_count = 0
+                                                    m_returns['serviceUri'] = m_method_id
+                                                    for k, v in m_returns.items():
+                                                        if k.lower() != 'descriptions':
+                                                            reg_returns_params += k + \
+                                                                "=" + \
+                                                                parse.quote(
+                                                                    str(v))
+                                                            m_count += 1
+                                                            if 'descriptions' in m_returns:
+                                                                if m_count < len(m_returns)-1:
+                                                                    reg_returns_params += "&"
+                                                            else:
+                                                                if m_count < len(m_returns):
+                                                                    reg_returns_params += "&"
+                                                    state, ret = POST(self._sc_uri+"returns/", post_data=bytes(
+                                                        reg_returns_params, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
+                                                    if state == 200:
+                                                        ret = json.loads(
+                                                            str(ret, encoding='utf-8'))
+                                                        if ret['state'] != 200:
+                                                            m_msg = 'register service methods failed. http code(%d), msg:%s' % (
+                                                                ret['state'], ret['msg'])
+                                                            logging.error(
+                                                                m_msg)
+                                                        else:
+                                                            m_returns_id = ret['msg']['id']
+                                                            if 'descriptions' in m_returns:
+                                                                # 注册返回值说明
+                                                                for item in m_returns['descriptions']:
+                                                                    m_returns_description = 'returns=' + \
+                                                                        str(m_returns_id)
+                                                                    m_returns_description += '&key=' + \
+                                                                        parse.quote(
+                                                                            item['key'])
+                                                                    m_description = item['valueDescription']
+                                                                    m_description = m_description.replace(
+                                                                        "<", "&lt;")
+                                                                    m_description = m_description.replace(
+                                                                        ">", "&gt;")
+                                                                    m_description = m_description.replace(
+                                                                        "\r\n", "<br />")
+                                                                    m_returns_description += '&valueDescription=' + \
+                                                                        parse.quote(
+                                                                            m_description)
+                                                                    state, ret = POST(self._sc_uri + "returnDescriptons/", post_data=bytes(
+                                                                        m_returns_description, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
+                                                                    if state != 200:
+                                                                        m_msg = 'register return description failed. http code(%d)' % state
+                                                                        logging.error(
+                                                                            m_msg)
+                                                                    else:
+                                                                        ret = json.loads(
+                                                                            str(ret, encoding='utf-8'))
+                                                                        if ret['state'] != 200:
+                                                                            m_msg = 'register return description failed. state(%d), msg(%s), key()' % (
+                                                                                ret['state'], ret['msg'], item['key'])
+                                                                            logging.error(
+                                                                                m_msg)
+                                                    else:
+                                                        m_msg = 'register returns failed. http code(%d)' % state
+                                                        logging.error(m_msg)
+
+                                        else:
+                                            if ret['state'] != 200:
+                                                m_msg = 'register service hosts failed. http code(%d), msg:%s' % (ret[
+                                                    'state'], ret['msg'])
+                                                logging.error(m_msg)
+                        except Exception as e:
+                            logging.error(e)
+                            logging.error(
+                                "register params error. method config error.please checked %s.__doc__" % (v.__name__))
+
 
 class RPC:
     '''
         RPC. 此类只能配合webservice/rpc使用, 独立使用将会报错.
     '''
 
-    def __init__(self, service_center_uri, secret, logging_config= None):
+    def __init__(self, service_center_uri, secret):
         '''
             初始化
             - params:
@@ -17,27 +279,19 @@ class RPC:
             -   secret: <string>, 访问密钥
         '''
         self._access_token = secret
+        self._m_heads = {}
+        self._m_heads['api-token'] = self._access_token if self._access_token else ''
         self._sc_uri = service_center_uri
         self._apisTable = {}
-        self._current_service= None
-        self._logging= False
-        if logging_config:
-            self._logging= True
-            logging_setup(logging_config)
+        self._current_service = None
 
-    def _log(self, msg, type="info"):
-        if self._logging:
-            if type.lower()=="info":
-                logging.info(msg)
-            elif type.lower()=="error":
-                logging.error(msg)
 
     def _getApi(self, service, method):
         if service+method not in self._apisTable:
             # 远程获取
-            m_heads = {"api-token": self._access_token}
+            method = parse.quote(method)
             status, body = GET(uri=self._sc_uri+"rpc/?key="+service +
-                               "&method="+method, time_out=15, http_headers=m_heads)
+                               "&method="+method, time_out=15, http_headers=self._m_heads)
             if status == 200:
                 self._apisTable[service+method] = json.loads(
                     str(body, encoding='utf-8'))
@@ -67,13 +321,13 @@ class RPC:
             if k.lower() != 'description':
                 if not v:
                     raise Exception("service '%s' value can't is none." % k)
-            m_service_post_data += k+"="+ parse.quote(str(v))
+            m_service_post_data += k+"=" + parse.quote(str(v))
             m_count += 1
             if m_count < len(service):
                 m_service_post_data += "&"
         # 注册服务基本信息.
         state, ret = POST(self._sc_uri+"services/",
-                          post_data=bytes(m_service_post_data, encoding='utf-8'), time_out=15)
+                          post_data=bytes(m_service_post_data, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
         if state == 200:
             if ret:
                 ret = json.loads(str(ret, encoding='utf-8'))
@@ -87,7 +341,8 @@ class RPC:
                         m_service_hosts_post_data = ''
                         for k, v in hosts[i].items():
                             if v:
-                                m_service_hosts_post_data += k+"="+parse.quote(str(v))
+                                m_service_hosts_post_data += k + \
+                                    "="+parse.quote(str(v))
                                 m_count += 1
                                 if m_count < len(hosts[i]):
                                     m_service_hosts_post_data += "&"
@@ -95,7 +350,7 @@ class RPC:
                                 raise Exception(
                                     "register hosts {} can't is none." % k)
                         state, ret = POST(self._sc_uri+"hosts/", post_data=bytes(
-                            m_service_hosts_post_data, encoding='utf-8'), time_out=15)
+                            m_service_hosts_post_data, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
                         if state != 200:
                             return False, 'register service hosts failed. msg:{}' % str(ret, encoding='utf-8')
                         else:
@@ -117,7 +372,8 @@ class RPC:
                                         raise Exception(
                                             'methods (%s) is none.' % k.lower())
                                 if k.lower() != 'method':
-                                    m_service_uri_post_data += k + "=" + parse.quote(str(v))
+                                    m_service_uri_post_data += k + \
+                                        "=" + parse.quote(str(v))
                                 else:
                                     m_value = 0
                                     if v.upper() == u"GET":
@@ -138,7 +394,7 @@ class RPC:
                                     if m_count < len(methods[i]):
                                         m_service_uri_post_data += "&"
                         state, ret = POST(self._sc_uri+"uri/", post_data=bytes(
-                            m_service_uri_post_data, encoding='utf8'), time_out=15)
+                            m_service_uri_post_data, encoding='utf8'), http_headers=self._m_heads, time_out=15)
                         if state != 200:
                             return False, 'register service methods failed. msg:{}' % str(ret, encoding='utf-8')
                         else:
@@ -163,7 +419,8 @@ class RPC:
                                                         raise Exception(
                                                             'methods params (%s) is none.' % k.lower())
                                                     m_service_method_params_post_data += k + \
-                                                        "=" + parse.quote(str(v))
+                                                        "=" + \
+                                                        parse.quote(str(v))
                                                     m_count += 1
                                                     try:
                                                         if m_count < len(params[param_offset]):
@@ -171,54 +428,69 @@ class RPC:
                                                     except Exception as e:
                                                         raise e
                                                 state, ret = POST(
-                                                    self._sc_uri+"params/", post_data=bytes(m_service_method_params_post_data, encoding='utf-8'), time_out=15)
+                                                    self._sc_uri+"params/", post_data=bytes(m_service_method_params_post_data, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
                                     # 注册返回值
                                     if 'returns' in methods[i]:
-                                        m_returns= methods[i]['returns']
+                                        m_returns = methods[i]['returns']
                                         if m_returns:
                                             # 有返回值设置进行注册.
-                                            reg_returns_params=''
-                                            m_count=0
-                                            m_returns['serviceUri']= m_method_id
-                                            for k,v in m_returns.items():
-                                                if k.lower()!= 'descriptions':
-                                                    reg_returns_params+= k+"="+parse.quote(str(v))
-                                                    m_count+=1
+                                            reg_returns_params = ''
+                                            m_count = 0
+                                            m_returns['serviceUri'] = m_method_id
+                                            for k, v in m_returns.items():
+                                                if k.lower() != 'descriptions':
+                                                    reg_returns_params += k + \
+                                                        "="+parse.quote(str(v))
+                                                    m_count += 1
                                                     if 'descriptions' in m_returns:
-                                                        if m_count< len(m_returns)-1:
-                                                            reg_returns_params+="&"
+                                                        if m_count < len(m_returns)-1:
+                                                            reg_returns_params += "&"
                                                     else:
                                                         if m_count < len(m_returns):
-                                                            reg_returns_params+="&"
-                                            state, ret= POST(self._sc_uri+"returns/",post_data= bytes(reg_returns_params,encoding='utf-8'),time_out=15)
+                                                            reg_returns_params += "&"
+                                            state, ret = POST(self._sc_uri+"returns/", post_data=bytes(
+                                                reg_returns_params, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
                                             if state == 200:
-                                                ret = json.loads(str(ret, encoding='utf-8'))
+                                                ret = json.loads(
+                                                    str(ret, encoding='utf-8'))
                                                 if ret['state'] != 200:
-                                                    m_msg = 'register service methods failed. http code(%d), msg:%s' % (ret['state'], ret['msg'])
+                                                    m_msg = 'register service methods failed. http code(%d), msg:%s' % (
+                                                        ret['state'], ret['msg'])
                                                     return False, m_msg
                                                 else:
-                                                    m_returns_id= ret['msg']['id']
+                                                    m_returns_id = ret['msg']['id']
                                                     if 'descriptions' in m_returns:
                                                         # 注册返回值说明
                                                         for item in m_returns['descriptions']:
-                                                            m_returns_description= 'returns='+ str(m_returns_id)
-                                                            m_returns_description+= '&key='+parse.quote(item['key'])
-                                                            m_description= item['valueDescription']
-                                                            m_description= m_description.replace("<","&lt;")
-                                                            m_description= m_description.replace(">","&gt;")
-                                                            m_description= m_description.replace("\r\n","<br />")
-                                                            m_returns_description+= '&valueDescription='+parse.quote(m_description)
-                                                            state, ret= POST(self._sc_uri+ "returnDescriptons/", post_data=bytes(m_returns_description,encoding='utf-8'),time_out=15)
-                                                            if state!=200:
-                                                                m_msg = 'register return description failed. http code(%d)'% state
+                                                            m_returns_description = 'returns=' + \
+                                                                str(m_returns_id)
+                                                            m_returns_description += '&key=' + \
+                                                                parse.quote(
+                                                                    item['key'])
+                                                            m_description = item['valueDescription']
+                                                            m_description = m_description.replace(
+                                                                "<", "&lt;")
+                                                            m_description = m_description.replace(
+                                                                ">", "&gt;")
+                                                            m_description = m_description.replace(
+                                                                "\r\n", "<br />")
+                                                            m_returns_description += '&valueDescription=' + \
+                                                                parse.quote(
+                                                                    m_description)
+                                                            state, ret = POST(self._sc_uri + "returnDescriptons/", post_data=bytes(
+                                                                m_returns_description, encoding='utf-8'), http_headers=self._m_heads, time_out=15)
+                                                            if state != 200:
+                                                                m_msg = 'register return description failed. http code(%d)' % state
                                                                 return False, m_msg
                                                             else:
-                                                                ret = json.loads(str(ret, encoding='utf-8'))
-                                                                if ret['state']!=200:
-                                                                    m_msg= 'register return description failed. state(%d), msg(%s), key()'%(ret['state'],ret['msg'], item['key'])
+                                                                ret = json.loads(
+                                                                    str(ret, encoding='utf-8'))
+                                                                if ret['state'] != 200:
+                                                                    m_msg = 'register return description failed. state(%d), msg(%s), key()' % (
+                                                                        ret['state'], ret['msg'], item['key'])
                                                                     return False, m_msg
                                             else:
-                                                m_msg = 'register returns failed. http code(%d)'% state
+                                                m_msg = 'register returns failed. http code(%d)' % state
                                                 return False, m_msg
 
                                 else:
@@ -247,7 +519,7 @@ class RPC:
             - returns
             -   self: <RPC>, 返回一个RPC服务句柄.
         '''
-        self._current_service= service
+        self._current_service = service
         return copy.deepcopy(self)
 
     def call(self, method, **kwargs):
@@ -257,16 +529,19 @@ class RPC:
             -   method: <string>, 方法key值.
             - **kwargs: 参数字典
             - returns:
-            -   json: <json>, formatter: {"httpCode":"调用网络状态", "data":"调用的方法的返回值"}
+            -   json: <json>, formatter: {"state":"调用网络状态", "msg":"调用的方法的返回值"}
         '''
         if not self._current_service:
-            raise Exception('service is not set, first call self.handle method to set service.')
+            raise Exception(
+                'service is not set, first call self.handle method to set service.')
         state, ret = self._getApi(self._current_service, method)
         if state:
             try:
                 m_uri = ret['uri']
                 m_params = ret['params']
                 m_method = ret['method']
+                m_headers = {
+                    'api-token': ret['secret'] if ret['secret'] else ''}
                 params_data = ''
                 m_count = 0
                 for param in m_params:
@@ -276,59 +551,71 @@ class RPC:
                                 '=' + parse.quote(str(kwargs[param['key']]))
                         else:
                             if param['defaultValue']:
-                                params_data += param['key'] + '=' + parse.quote(param['defaultValue'])
+                                params_data += param['key'] + '=' + \
+                                    parse.quote(param['defaultValue'])
                         m_count += 1
-                        if m_count < len(kwargs):
+                        if m_count < len(m_params):
                             params_data += "&"
                     else:
-                        m_uri.replace("{pk}", parse.quote(str(kwargs[param['key']])))
+                        m_uri= m_uri.replace("{pk}", parse.quote(
+                            str(kwargs[param['key']])))
+                if params_data:
+                    if m_method == u"GET" or m_method == u"DELETE":
+                        if m_uri.find('?')>=0:
+                            m_uri += "&" + params_data
+                        else:
+                            m_uri += "?"+params_data
                 try:
                     if m_method == u"GET":
-                        m_uri += "?" + params_data
-                        self._log(m_uri)
-                        state, ret = GET(uri= m_uri, time_out=15)
+                        logging.info("access api:(%s), method(GET)."%m_uri)
+                        state, ret = GET(
+                            uri=m_uri, http_headers=m_headers, time_out=15)
                         if state == 200:
                             try:
-                                ret= json.loads(str(ret, encoding="utf-8"))
-                                return {"httpCode": ret['state'], "data": ret['msg']}
+                                ret = json.loads(str(ret, encoding="utf-8"))
+                                return {"state": ret['state'], "msg": ret['msg']}
                             except Exception as e:
                                 raise e
                         else:
                             try:
-                                ret= json.loads(str(ret, encoding="utf-8"))
-                                return {"httpCode": ret['state'], "data": ret['msg']}
+                                ret = json.loads(str(ret, encoding="utf-8"))
+                                return {"state": ret['state'], "msg": ret['msg']}
                             except:
-                                return {"httpCode": ret['state'], "data": ret}
+                                return {"state": ret['state'], "msg": ret}
                     elif m_method == u"POST":
-                        self._log(m_uri+", postdata:%s"%params_data)
+                        logging.info("access api:(%s), method(POST),postdata:%s."%(m_uri,params_data))
                         state, ret = POST(m_uri, bytes(
-                            params_data, encoding='utf-8'), time_out=15)
+                            params_data, encoding='utf-8'), http_headers=m_headers, time_out=15)
                         if state == 200:
                             try:
-                                ret= json.loads(str(ret, encoding="utf-8"))
-                                return {"httpCode": ret['state'], "data": ret['msg']}
+                                ret = json.loads(str(ret, encoding="utf-8"))
+                                return {"state": ret['state'], "msg": ret['msg']}
                             except Exception as e:
+                                logging.error(e)
                                 raise e
                         else:
                             try:
-                                ret= json.loads(str(ret, encoding="utf-8"))
-                                return {"httpCode": ret['state'], "data": ret['msg']}
+                                ret = json.loads(str(ret, encoding="utf-8"))
+                                return {"state": ret['state'], "msg": ret['msg']}
                             except:
-                                return {"httpCode": ret['state'], "data": ret}
+                                return {"state": state, "msg": ret}
                     elif m_method == u"PUT":
+                        logging.info("access api:(%s), method(PUT),postdata:%s."%(m_uri,params_data))
+                        
                         # 还没有写PUT方法
                         raise Exception('urllib PUT方法还没写.')
                     elif m_method == u"DELETE":
                         # 还没有写DELETE方法
+                        logging.info("access api:(%s), method(DELETE)"%m_uri)
                         raise Exception("urllib delete 方法还没写.")
                     else:
                         raise Exception('restful method is error.')
                 except Exception as e:
-                    return {"httpCode": -1, "data": e}
+                    return {"state": -1, "msg": e}
             except Exception as e:
                 raise e
         else:
-            return {"httpCode": -1, "data": ret}
+            return {"state": -1, "msg": ret}
 
 
 if __name__ == '__main__':
@@ -343,57 +630,57 @@ if __name__ == '__main__':
     #print(m_rpc.call("remote_config","remote_config_register", **{"name":"测试远程配置服务注册","serivce_key":"test_rpc_register"}))
     '''
     serviceConfig = {
-    "services": [
-        {
-            # 服务配置
-            "service": {
-                "name": "TEST",
-                "description":"TEST",
-                "key":"TEST",
-                "accessSecret": "slkjflkjdfejfoejfoefef",
-                "httpProtocol":"http://"
-            },
-            # 服务器配置
-            "hosts":[
-                {
-                    "host": "127.0.0.1",
-                    "port": 8004
-                }
-            ],
-            # 方法配置
-            "methods":[
-                # 帐号相关 begin
-                {
-                    "key": "TEST" + "_ACCOUNTS_LIST",
-                    "uri": "api/accounts/",
-                    "method": "GET",
-                    "version": "1.0.0",
-                    "description": "获取帐号列表",
-                    "params": [
-                        {
-                            "key":"page",
-                            "descript":"页码",
-                            "defaultValue": "1"
-                        }
-                    ],
-                    "returns":{
-                        "valueType":"json",
-                        "examples": json.dumps({"state":200,"msg":{"count": 0,"next": None,"previous": None,"results": []}}),
-                        "descriptions":[
-                            {
-                                "key":"state",
-                                "valueDescription":"200:success,\r\n-1:failed."
-                            },
-                            {
-                                "key":"msg",
-                                "valueDescription":"success returns json({count:<int>(total records count),next:<string>(next page url),previous:<string>(previous page url),results:[json(<account>)]}),\r\nfailed returns error msg(<string>)."
-                            }
-                        ]
+        "services": [
+            {
+                # 服务配置
+                "service": {
+                    "name": "TEST",
+                    "description": "TEST",
+                    "key": "TEST",
+                    "accessSecret": "slkjflkjdfejfoejfoefef",
+                    "httpProtocol": "http://"
+                },
+                # 服务器配置
+                "hosts": [
+                    {
+                        "host": "127.0.0.1",
+                        "port": 8004
                     }
-                }
-            ]
-        }
-    ]
+                ],
+                # 方法配置
+                "methods": [
+                    # 帐号相关 begin
+                    {
+                        "key": "TEST" + "_ACCOUNTS_LIST",
+                        "uri": "api/accounts/",
+                        "method": "GET",
+                        "version": "1.0.0",
+                        "description": "获取帐号列表",
+                        "params": [
+                            {
+                                "key": "page",
+                                "descript": "页码",
+                                "defaultValue": "1"
+                            }
+                        ],
+                        "returns": {
+                            "valueType": "json",
+                            "examples": json.dumps({"state": 200, "msg": {"count": 0, "next": None, "previous": None, "results": []}}),
+                            "descriptions":[
+                                {
+                                    "key": "state",
+                                    "valueDescription": "200:success,\r\n-1:failed."
+                                },
+                                {
+                                    "key": "msg",
+                                    "valueDescription": "success returns json({count:<int>(total records count),next:<string>(next page url),previous:<string>(previous page url),results:[json(<account>)]}),\r\nfailed returns error msg(<string>)."
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
     }
     '''
     count=0
@@ -403,8 +690,8 @@ if __name__ == '__main__':
             hosts=item['hosts'],
             methods=item['methods']))
     '''
-    g=m_rpc.handle("GENERAL_SERVICE")
-    ret= g.call(
+    g = m_rpc.handle("GENERAL_SERVICE")
+    ret = g.call(
         "GENERAL_SERVICE_VALIDATE_CODE_VALIDATE",
         **{
             "validateType": 1,
@@ -414,5 +701,5 @@ if __name__ == '__main__':
         })
     print(ret)
     #m_id= ret['data']['id']
-    #ret=g.call('REMOTE_CONFIG_CONFIG_REGISTER',**{"config_key":"test1","config_value":"testvalue","service":m_id})
-    #print(ret)
+    # ret=g.call('REMOTE_CONFIG_CONFIG_REGISTER',**{"config_key":"test1","config_value":"testvalue","service":m_id})
+    # print(ret)

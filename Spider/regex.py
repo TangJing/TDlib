@@ -132,7 +132,7 @@ class Analysis(Event):
                                     m_params[k]=params[offset]
                                     offset+=1
                                 else:
-                                    raise Exception('Parameter:array length exceeded.')
+                                    self.__error('Parameter:array length exceeded.', SPIDER_STATUS.SPIDER_ERROR)
                     else:
                         self.__error('confing {0} -root.search_cfg.params, not found key.'.format(key),SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
                     if "method" in config["search_cfg"]:
@@ -191,7 +191,7 @@ class Analysis(Event):
                 else:
                     return self.__error("-root.search_cfg, can't found key.", SPIDER_STATUS.SPIDER_CONFIG_CAN_NOT_FOUND_KEY)
         else:
-            raise Exception('parameter is none.')
+            self.__error("parameter is none.", SPIDER_STATUS.SPIDER_ERROR)
 
     def __url_check(self):
         self.__state = SPIDER_STATUS.SPIDER_SUCCESS
@@ -252,14 +252,13 @@ class Analysis(Event):
                                 json_file.close()
                                 self.__state = SPIDER_STATUS.SPIDER_SUCCESS
                         except Exception as e:
-                            raise Exception(e)
+                            self.__error(e, SPIDER_STATUS.SPIDER_ERROR)
                     else:
-                        raise Exception(
-                            "can't found config file. path(%s)" % str(item['path']))
+                        self.__error("can't found config file. path(%s)" % str(item['path']), SPIDER_STATUS.SPIDER_ERROR)
                 else:
-                    raise Exception('config path is null.')
+                    self.__error("config path is null.", SPIDER_STATUS.SPIDER_ERROR)
         else:
-            raise Exception('rules config is null.')
+            self.__error('rules config is null', SPIDER_STATUS.SPIDER_ERROR)
 
     def __httpControl(self, time_out=5, method= 'GET'):
         '''
@@ -688,7 +687,7 @@ class Analysis(Event):
                         item['extract_regex'], item['replace_str'], value, count=0, flags=0)
                 self.__define_var[m_config['key']] = value
         except Exception as e:
-            raise e
+            self.__error(e,SPIDER_STATUS.SPIDER_ERROR)
 
     def __replace(self, rule_index, action_index):
         '''

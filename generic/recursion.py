@@ -21,8 +21,8 @@ def recursion(func):
             if kwargs['count'] == kwargs['upper-limit']:
                 return args, kwargs
             return func(*args, **kwargs)
-        except Exception:
-            pass
+        except Exception as e:
+            raise e
     return wapper
 
 def recursionCall(func, upper_limit:int=200, *args, **wargs):

@@ -4,7 +4,7 @@
 '''
 @File    :   requier.py
 @Time    :   2020/04/18 06:48:15
-@Author  :   Tang Jing 
+@Author  :   Tang Jing
 @Version :   1.0.0
 @Contact :   yeihizhi@163.com
 @License :   (C)Copyright 2020
@@ -15,22 +15,18 @@
 
 # code start
 
+
 class R:
-    def __init__(self, namespace, clsName= None, *args, **kwargs):
+    def __init__(self, namespace, *args, **kwargs):
         '''
         热加载一个类
         参数
          - namespace: string, 格式：generic.requier:R
         '''
         self.__userNamespace = namespace
-        self.__clsName= clsName
         self.__namespace = None  # namespace or import path
         self.__instance = None  # instance class
         self.__importt()  # run import method
-        if self.__clsName:
-            return self.Instance(self.__clsName, *args, **kwargs)
-        else:
-            return self
 
     def __importt(self):
         '''
@@ -66,3 +62,32 @@ class R:
                 return None
         except Exception as e:
             return None
+
+    def Call(self, methodname, *args, **kw):
+        '''
+            Call method
+        '''
+        try:
+            if methodname:
+                if self.__instance:
+                    method = getattr(self.__instance, methodname)
+                    if method:
+                        return method(*args, **kw)
+                    else:
+                        return None
+                else:
+                    return None
+            else:
+                return None
+        except Exception as e:
+            return None
+
+def InstanceCall(handle, method, *args, **kwargs):
+    try:
+        method= getattr(handle, method)
+        if method:
+            return method(*args, **kwargs)
+        else:
+            raise Exception('%s not have method %s'%(handle, method))
+    except Exception as e:
+        raise e
